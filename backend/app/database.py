@@ -37,8 +37,7 @@ async def init_db() -> None:
             await conn.run_sync(Base.metadata.create_all)
         logger.info("Database tables initialized successfully.")
     except Exception as e:
-        logger.error(f"Error during database table initialization: {e}")
-        raise
+        logger.warning(f"Database table initialization skipped (database connection unavailable): {e}")
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:

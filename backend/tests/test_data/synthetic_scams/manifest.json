@@ -1,0 +1,73 @@
+{
+  "samples": [
+    {
+      "id": "sample1",
+      "filename": "sample1_bank_otp_hindi.wav",
+      "scenario": "Fake bank representative requesting an OTP",
+      "language": "hi",
+      "language_name": "Hindi",
+      "voice": "Lekha",
+      "expected_transcript": "नमस्कार, मैं भारत विकास बैंक से सीनियर मैनेजर राजेश वर्मा बोल रहा हूँ। आपके बचत खाते से अभी पच्चीस हज़ार रुपये का संदिग्ध यूपीआई भुगतान करने का प्रयास किया गया है। यदि यह लेन-देन आपने नहीं किया है, तो इस लेन-देन को रद्द करने के लिए अपने मोबाइल पर आया छह अंकों का ओटीपी तुरंत बताएं।",
+      "fictional_entities": {
+        "bank": "भारत विकास बैंक",
+        "manager": "राजेश वर्मा",
+        "amount": "₹25,000"
+      }
+    },
+    {
+      "id": "sample2",
+      "filename": "sample2_kyc_suspension_hindi.wav",
+      "scenario": "Fraudulent KYC verification warning",
+      "language": "hi",
+      "language_name": "Hindi",
+      "voice": "Lekha",
+      "expected_transcript": "अति आवश्यक सूचना। आपका बैंक खाता केवाईसी सत्यापन अधूरा होने के कारण अगले चौबीस घंटे में निष्क्रिय कर दिया जाएगा। अपनी खाता सेवाएं जारी रखने के लिए अपने आधार कार्ड और पैन कार्ड का विवरण तुरंत सत्यापित करें।",
+      "fictional_entities": {
+        "service": "केवाईसी सत्यापन",
+        "deadline": "24 घंटे"
+      }
+    },
+    {
+      "id": "sample3",
+      "filename": "sample3_lottery_prize_tamil.wav",
+      "scenario": "Fake prize or lottery announcement",
+      "language": "ta",
+      "language_name": "Tamil",
+      "voice": "Vani",
+      "expected_transcript": "வணக்கம்! எங்கள் தேசிய சிறப்பு அதிர்ஷ்டக் குலுக்கலில் உங்கள் தொலைபேசி எண் தேர்ந்தெடுக்கப்பட்டு இருபத்தைந்து லட்சம் ரூபாய் ரொக்கப் பரிசு வென்றுள்ளது. உங்கள் பரிசுத் தொகையை உடனடியாகப் பெற பதிவுக் கட்டணம் செலுத்தவும்.",
+      "fictional_entities": {
+        "lottery": "தேசிய சிறப்பு அதிர்ஷ்டக் குலுக்கல்",
+        "prize": "₹25,00,000"
+      }
+    },
+    {
+      "id": "sample4",
+      "filename": "sample4_account_freeze_tamil.wav",
+      "scenario": "Suspicious payment or account-blocking threat",
+      "language": "ta",
+      "language_name": "Tamil",
+      "voice": "Vani",
+      "expected_transcript": "கவனிக்கவும்! உங்கள் வங்கிக் கணக்கில் இருந்து ஐம்பதாயிரம் ரூபாய் சந்தேகத்திற்கிடமான பரிவர்த்தனை நடந்துள்ளது. உங்கள் கணக்கு தற்காலிகமாக முடக்கப்பட்டுள்ளது. கணக்கை மீண்டும் இயக்க உடனடியாக தொடர்பு கொள்ளவும்.",
+      "fictional_entities": {
+        "amount": "₹50,000",
+        "status": "முடக்கப்பட்டது"
+      }
+    },
+    {
+      "id": "sample5",
+      "filename": "sample5_customer_support_pin_english.wav",
+      "scenario": "Fraudulent customer-support message requesting a PIN",
+      "language": "en",
+      "language_name": "English",
+      "voice": "Rishi",
+      "expected_transcript": "Hello, this is the Cyber Security Fraud Investigation Desk of Metro Trust Bank. We detected an unauthorized debit card transaction of forty-five thousand rupees. To reverse this charge and block the transaction, please provide your four-digit ATM PIN and card expiry date immediately.",
+      "fictional_entities": {
+        "bank": "Metro Trust Bank",
+        "department": "Cyber Security Fraud Investigation Desk",
+        "amount": "₹45,000"
+      }
+    }
+  ],
+  "version": "1.0",
+  "created": "2026-10-26"
+}

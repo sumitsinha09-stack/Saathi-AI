@@ -40,6 +40,7 @@
       </div>
 
       <nav class="nav-links" id="nav-links">
+        <a href="#voice-studio" class="nav-link">🎙️ Record Note</a>
         <a href="#features" class="nav-link">Features</a>
         <a href="#how-it-works" class="nav-link">How It Works</a>
         <a href="#safety" class="nav-link">Privacy & Safety</a>
@@ -84,19 +85,21 @@
           </p>
 
           <div class="hero-cta-group">
-            <a href="#how-it-works" class="btn btn-primary btn-lg" id="cta-explore-btn">
+            <a href="#voice-studio" class="btn btn-primary btn-lg" id="cta-record-hero-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+                <line x1="8" y1="23" x2="16" y2="23"></line>
+              </svg>
+              <span>Record Voice Note</span>
+            </a>
+            <a href="#how-it-works" class="btn btn-secondary btn-lg" id="cta-explore-btn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
                 <circle cx="12" cy="12" r="10"></circle>
                 <polygon points="10 8 16 12 10 16 10 8"></polygon>
               </svg>
-              <span>See How It Works</span>
-            </a>
-            <a href="#features" class="btn btn-secondary btn-lg" id="cta-features-btn">
-              <span>Explore Features</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-              </svg>
+              <span>How It Works</span>
             </a>
           </div>
 
@@ -191,6 +194,375 @@
               <span class="mic-icon">🎙️</span>
             </div>
           </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Voice Note Studio & Incident Intake Section -->
+    <section class="voice-studio-section" id="voice-studio">
+      <div class="container">
+        
+        <div class="section-header text-center">
+          <div class="section-tag" id="voice-studio-tag">Voice Intake & Spooling Studio</div>
+          <h2 class="section-title">Record or Upload Your Incident Voice Note</h2>
+          <p class="section-description">
+            Describe the fraudulent transaction in Hindi, English, or Hinglish. Your recording is temporarily spooled and protected by our zero-retention security model.
+          </p>
+        </div>
+
+        <!-- Mandatory Consent and Security Notice -->
+        <div class="consent-notice-card" id="consent-notice-card">
+          <div class="consent-header">
+            <span class="shield-badge">🛡️ Mandatory Privacy, Consent & Zero-Credential Policy</span>
+          </div>
+          <div class="consent-grid">
+            <div class="consent-item">
+              <div class="consent-icon">🎙️</div>
+              <div class="consent-content">
+                <h4>What Audio is Collected</h4>
+                <p>Voice note narrating transaction details, disputed amount, time, and suspect UPI / bank handle.</p>
+              </div>
+            </div>
+            <div class="consent-item">
+              <div class="consent-icon">🎯</div>
+              <div class="consent-content">
+                <h4>Why Audio is Collected</h4>
+                <p>To help victims rapidly articulate fraud details and generate structured dispute notices for banks and 1930.</p>
+              </div>
+            </div>
+            <div class="consent-item">
+              <div class="consent-icon">⏳</div>
+              <div class="consent-content">
+                <h4>Retention & Auto-Deletion</h4>
+                <p>Recordings are stored temporarily in a dedicated transient spool and purged automatically after 24 hours.</p>
+              </div>
+            </div>
+            <div class="consent-item alert-warning">
+              <div class="consent-icon">⚠️</div>
+              <div class="consent-content">
+                <h4>Strict Zero-Credential Warning</h4>
+                <p><strong>Never speak or share OTPs, ATM PINs, passwords, CVVs, or online banking login credentials.</strong></p>
+              </div>
+            </div>
+          </div>
+          <div class="consent-footer">
+            <label class="consent-checkbox-label">
+              <input type="checkbox" id="consent-checkbox" checked>
+              <span>I confirm that I understand this voice note is stored temporarily and I will NOT disclose OTPs, PINs, or passwords.</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Interactive Voice Studio Card -->
+        <div class="voice-studio-card">
+          
+          <!-- Mode Tabs -->
+          <div class="studio-tabs" role="tablist">
+            <button class="studio-tab active" id="tab-record-btn" type="button" role="tab" aria-selected="true" aria-controls="panel-record">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+                <line x1="8" y1="23" x2="16" y2="23"></line>
+              </svg>
+              <span>Record Live Voice Note</span>
+            </button>
+            <button class="studio-tab" id="tab-upload-btn" type="button" role="tab" aria-selected="false" aria-controls="panel-upload">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <span>Upload Existing Audio File</span>
+            </button>
+          </div>
+
+          <!-- Tab Panel 1: Live Voice Recorder -->
+          <div class="tab-panel active" id="panel-record" role="tabpanel">
+            <div class="recorder-container">
+              
+              <div class="record-btn-wrapper">
+                <button class="big-record-btn" id="btn-record" type="button" aria-label="Start Voice Recording" title="Click to Record">
+                  <svg id="record-mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="44" height="44">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                  </svg>
+                </button>
+                <div class="record-pulse-ring"></div>
+              </div>
+
+              <div class="recorder-status-text" id="record-status-label">Ready to record</div>
+              <div class="recorder-hint-text" id="record-hint-text">Tap the microphone to begin • Maximum 2 minutes (120s)</div>
+
+              <!-- Digital Timer Display -->
+              <div class="recording-timer-box" id="recording-timer-box">
+                <span class="timer-current" id="timer-display">00:00</span>
+                <span class="timer-limit">/ 02:00</span>
+              </div>
+
+              <!-- Dynamic Audio Waveform Amplitude Visualizer -->
+              <div class="waveform-visualizer" id="waveform-visualizer">
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+              </div>
+
+              <!-- Controls Row: Pause, Stop, Delete -->
+              <div class="studio-controls-row" id="record-controls-row">
+                <button class="ctrl-btn btn-ctrl-pause" id="btn-pause-record" type="button" disabled>
+                  <span id="pause-icon">⏸️</span>
+                  <span id="pause-label">Pause</span>
+                </button>
+                <button class="ctrl-btn btn-ctrl-stop" id="btn-stop-record" type="button" disabled>
+                  <span>⏹️</span>
+                  <span>Stop</span>
+                </button>
+                <button class="ctrl-btn btn-ctrl-delete" id="btn-delete-record" type="button" disabled>
+                  <span>🗑️</span>
+                  <span>Discard</span>
+                </button>
+              </div>
+
+              <!-- Preview Player Card (Shown after recording stops) -->
+              <div class="audio-preview-section" id="audio-preview-section">
+                <div class="audio-preview-card">
+                  <div class="preview-header">
+                    <span class="preview-title">
+                      <span>🎧</span>
+                      <span>Recording Preview</span>
+                    </span>
+                    <span class="preview-duration-badge" id="preview-duration-badge">0:00</span>
+                  </div>
+                  <div class="custom-audio-player">
+                    <audio id="preview-audio-element" controls playsinline preload="auto"></audio>
+                  </div>
+                  <div class="preview-actions-row">
+                    <button class="btn btn-secondary btn-sm" id="btn-re-record" type="button">
+                      <span>🔄 Record Again</span>
+                    </button>
+                    <button class="btn btn-primary btn-sm" id="btn-send-recorded" type="button">
+                      <span>📤 Transcribe Voice Note</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Tab Panel 2: File Upload -->
+          <div class="tab-panel" id="panel-upload" role="tabpanel">
+            <div class="upload-container">
+              
+              <div class="file-drop-zone" id="file-drop-zone">
+                <input type="file" id="audio-file-input" accept=".webm,.ogg,.mp3,.wav,.m4a,audio/webm,audio/ogg,audio/mpeg,audio/wav,audio/mp4,audio/x-m4a" style="display: none;">
+                <div class="drop-icon">📁</div>
+                <div class="drop-title">Drop your audio file here or click to browse</div>
+                <div class="drop-subtitle">Supported on desktop and mobile browsers</div>
+                <div class="format-badges-row">
+                  <span class="format-badge">.webm</span>
+                  <span class="format-badge">.ogg</span>
+                  <span class="format-badge">.mp3</span>
+                  <span class="format-badge">.wav</span>
+                  <span class="format-badge">.m4a</span>
+                  <span class="format-badge limit-badge">Max 5 MB</span>
+                  <span class="format-badge limit-badge">Max 2 min</span>
+                </div>
+              </div>
+
+              <!-- Selected File Details Card -->
+              <div class="file-details-card" id="file-details-card">
+                <div class="file-details-content">
+                  <div class="file-name-meta">
+                    <h5 id="upload-file-name">filename.mp3</h5>
+                    <span id="upload-file-meta">1.2 MB • audio/mpeg</span>
+                  </div>
+                  <button class="btn btn-secondary btn-sm" id="btn-remove-file" type="button">✕ Remove</button>
+                </div>
+                <div class="custom-audio-player">
+                  <audio id="upload-audio-preview" controls playsinline preload="auto"></audio>
+                </div>
+                <div class="preview-actions-row">
+                  <button class="btn btn-primary btn-sm" id="btn-send-file" type="button">
+                    <span>📤 Transcribe Audio File</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Alert / Status Notice -->
+          <div class="studio-alert" id="studio-alert" role="alert">
+            <span id="alert-icon">⚠️</span>
+            <span id="alert-message">Alert message</span>
+          </div>
+
+          <!-- Real-Time Upload Progress & Status Timeline Panel -->
+          <div class="studio-status-panel" id="studio-status-panel" style="display: none;">
+            <div class="status-panel-header">
+              <span class="status-panel-title">
+                <span>📡</span>
+                <span id="status-headline">Upload & Ingestion Pipeline</span>
+              </span>
+              <span class="status-badge" id="pipeline-status-badge">Processing</span>
+            </div>
+
+            <!-- Upload Progress Bar -->
+            <div class="progress-container">
+              <div class="progress-bar-fill" id="progress-bar-fill"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-top: -12px; margin-bottom: 16px;">
+              <span id="progress-text">Uploading... 0%</span>
+              <span id="progress-time-text">Secure TLS</span>
+            </div>
+
+            <!-- Status Stepper Timeline -->
+            <div class="status-stepper">
+              <div class="stepper-line"></div>
+              
+              <div class="step-item active" id="step-uploading">
+                <div class="step-circle">1</div>
+                <span class="step-label">Uploading</span>
+              </div>
+              <div class="step-item" id="step-received">
+                <div class="step-circle">2</div>
+                <span class="step-label">Received</span>
+              </div>
+              <div class="step-item" id="step-transcribing">
+                <div class="step-circle">3</div>
+                <span class="step-label">Transcribing</span>
+              </div>
+              <div class="step-item" id="step-completed">
+                <div class="step-circle">4</div>
+                <span class="step-label">Completed</span>
+              </div>
+            </div>
+
+            <!-- Token Card -->
+            <div class="token-card" id="token-card" style="display: none;">
+              <div class="token-info-left">
+                <h6>Cryptographic Tracking Token</h6>
+                <div class="token-string" id="token-display">token_abc123...</div>
+              </div>
+              <button class="btn btn-secondary btn-sm btn-copy-token" id="btn-copy-token" type="button">
+                <span>📋 Copy Token</span>
+              </button>
+            </div>
+
+            <!-- 5. Original Transcript Section showing detected language -->
+            <div class="transcript-card" id="transcript-card" style="display: none;">
+              <div class="transcript-header">
+                <div class="transcript-header-left">
+                  <span class="transcript-icon">📝</span>
+                  <h4>Original Transcript</h4>
+                </div>
+                <div class="language-badge" id="detected-language-badge">
+                  <span class="lang-flag" id="detected-lang-flag">🌐</span>
+                  <span id="detected-language-text">Detecting language...</span>
+                </div>
+              </div>
+              
+              <div class="transcript-body">
+                <p class="transcript-text" id="transcript-content">Awaiting transcription...</p>
+              </div>
+              
+              <div class="transcript-footer">
+                <div class="transcript-meta-note">
+                  <span>🔒 Preserved in original spoken language & script (Faster-Whisper)</span>
+                </div>
+                <!-- 8. Copy Transcript Button -->
+                <button class="btn btn-secondary btn-sm btn-copy-transcript" id="btn-copy-transcript" type="button">
+                  <span>📋 Copy Transcript</span>
+                </button>
+              </div>
+
+              <!-- 6. Translate to English Button Section -->
+              <div class="translate-action-bar" id="translate-action-bar" style="margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border-light);">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                  <button class="btn btn-primary btn-sm btn-translate" id="btn-translate-english" type="button">
+                    <span id="translate-btn-icon">🌐</span>
+                    <span id="translate-btn-text">Translate to English</span>
+                  </button>
+                  <span class="already-english-notice" id="already-english-notice" style="display: none;">
+                    ✓ Original speech is already in English — translation unnecessary
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 7. English Translation Section (Visible only after translation is requested) -->
+            <div class="translation-card" id="translation-card" style="display: none;">
+              <div class="translation-header">
+                <div class="translation-header-left">
+                  <span class="translation-icon">🇬🇧</span>
+                  <h4>English Translation</h4>
+                  <span class="translation-model-badge" id="translation-model-badge">Local Translation</span>
+                </div>
+                <div class="translation-header-right" style="display: flex; align-items: center; gap: 8px;">
+                  <!-- Re-translate button -->
+                  <button class="btn btn-secondary btn-sm" id="btn-retranslate" type="button" title="Re-generate translation with local LLM">
+                    <span id="retranslate-icon">🔄</span>
+                    <span id="retranslate-text">Re-translate</span>
+                  </button>
+                  <!-- Hide Translation / Show Translation toggle -->
+                  <button class="btn btn-secondary btn-sm btn-toggle-translation" id="btn-toggle-translation" type="button">
+                    <span id="toggle-translation-icon">👁️</span>
+                    <span id="toggle-translation-text">Hide Translation</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="translation-body" id="translation-body">
+                <p class="translation-text" id="translation-content">Generating natural English translation...</p>
+              </div>
+
+              <div class="translation-footer">
+                <div class="translation-meta-note">
+                  <span id="translation-meta-text">🔒 Translated locally without external translation APIs • Context & amounts preserved</span>
+                </div>
+                <!-- 8. Copy Translation Button -->
+                <button class="btn btn-secondary btn-sm btn-copy-translation" id="btn-copy-translation" type="button">
+                  <span>📋 Copy Translation</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Pipeline Summary / Reset -->
+            <div id="pipeline-summary-box" style="margin-top: 14px; text-align: center;">
+              <p id="pipeline-message" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px;"></p>
+              <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-secondary btn-sm" id="btn-retry-job" type="button" style="display: none;">
+                  <span>🔄 Retry Upload</span>
+                </button>
+                <button class="btn btn-secondary btn-sm" id="btn-reset-studio" type="button" style="display: none;">
+                  <span>🎙️ Record Another Note</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
         </div>
 
       </div>

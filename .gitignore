@@ -23,13 +23,17 @@ build/
 *.egg-info/
 
 # Audio / Transient Media (Strict privacy - never commit user audio)
+*.webm
 *.ogg
 *.wav
 *.mp3
 *.m4a
 *.aac
+!backend/tests/test_data/**
 media_temp/
 uploads/
+storage/
+backend/storage/
 
 # Node / Next.js
 node_modules/

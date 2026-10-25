@@ -10,7 +10,9 @@
 | :--- | :--- | :--- | :--- |
 | **Phase 1** | **Environment and Project Initialization** | ✅ **Completed** | 2026-10-25 |
 | **Phase 2** | **WhatsApp Webhook and Echo Bot** | ✅ **Completed** | 2026-10-25 |
-| **Phase 3** | **Audio Ingestion & Faster-Whisper Pipeline (Zero Retention)** | ⏳ *Pending* | Upcoming |
+| **Phase 2.5** | **Voice Note Recording, Validation & Upload System** | ✅ **Completed** | 2026-10-26 |
+| **Phase 3** | **Local Voice Transcription (Faster-Whisper, Zero Retention)** | ✅ **Completed** | 2026-10-26 |
+| **Phase 3.5** | **Automatic Transcription & Optional English Translation** | ✅ **Completed** | 2026-10-26 |
 | **Phase 4** | **Ollama (Qwen3) Structured Extraction & Credential Redaction** | ⏳ *Pending* | Upcoming |
 | **Phase 5** | **WhatsApp Interactive Review Gate (Confirm / Edit / Cancel)** | ⏳ *Pending* | Upcoming |
 | **Phase 6** | **Automated Relief Actions (Bank Dispute Email, PDF, 1930, FIR)** | ⏳ *Pending* | Upcoming |
@@ -19,6 +21,125 @@
 ---
 
 ## 📝 Phase-by-Phase Detailed Changelog
+
+### Phase 3.5: Automatic Transcription & Optional English Translation (Completed: 2026-10-26)
+
+#### 1. Automatic Transcription Pipeline
+- **Auto-send Triggers**:
+  - Automatically submits voice recordings upon stopping the recorder or selecting/dropping an audio file without requiring manual confirmation.
+  - Retains manual "Transcribe Voice Note" and "Transcribe Audio File" buttons for full user control and retry workflows.
+- **Strict Native Dialect Preservation**:
+  - Automatically identifies spoken languages including Hindi, Tamil, and English.
+  - Hindi speech is preserved in Hindi script (Devanagari).
+  - Tamil speech is preserved in Tamil script.
+  - English speech is preserved in English.
+  - Spoken Hindi and Tamil are never auto-translated into English during initial transcription.
+
+#### 2. Local Translation Engine & Endpoints
+- **High-Accuracy Local Translation Strategy (`backend/app/services/translation_service.py`)**:
+  - 100% offline local inference: zero audio or text sent to external translation APIs.
+  - **Ollama (`qwen2.5:3b`) [Primary Engine]**: High-accuracy Indic-to-English translation specifically engineered for Indian cybercrime narratives. Correctly handles conversational Hindi, Devanagari loanwords ("फ्रॉड कॉल" $\rightarrow$ *fraud call*, "बैंक अकांट" $\rightarrow$ *bank account*, "पैसे कट गए" $\rightarrow$ *money debited*), Tamil, and Hinglish. Preserves victim perspective, names, dispute context, and financial amounts (e.g., ₹10,000, ₹25,000).
+  - **Argos Translate (CTranslate2) [Emergency Fallback]**: Pre-packaged offline statistical fallback for basic phrases if Ollama daemon is unreachable.
+  - **English Passthrough**: Detects English speech and marks translation as unnecessary while keeping text verbatim.
+- **Secure Translation API (`POST /api/voice/translate`)**:
+  - Accepts secure tracking token and optional `force_refresh` flag.
+  - Validates cryptographic token and ensures transcription has completed before allowing translation.
+  - Caches generated translations on `VoiceUpload.english_translation` to return cached results on subsequent requests without redundant computation.
+  - Supports `force_refresh: true` to bypass stale or low-quality cached translations.
+  - Updates DB without overwriting or modifying original transcript.
+  - Internal server paths, API secrets, and stack traces strictly sanitized from responses.
+
+#### 3. Responsive User Interface Order (1 through 8)
+- Arranged cleanly according to strict specifications:
+  1. Record or upload audio (Live recording tab with waveform or File dropzone).
+  2. Audio playback preview player with duration badge.
+  3. Send & Transcribe action button.
+  4. Transcription progress indicator with 4-step timeline (`Uploading ➔ Received ➔ Transcribing ➔ Completed`).
+  5. **Original Transcript** section with detected language pill and flag.
+  6. **Translate to English** button with animated spinner and "already in English" notification.
+  7. **English Translation** section (visible only when translation is requested, displayed simultaneously below original transcript).
+  8. Copy buttons: dedicated **Copy Transcript** and **Copy Translation** buttons with clipboard feedback.
+  - Includes a **Hide Translation / Show Translation** toggle button.
+
+---
+
+### Phase 3: Local Voice Transcription & Faster-Whisper Pipeline (Completed: 2026-10-26)
+
+#### 1. Faster-Whisper Local Integration & Model Architecture
+- **Inference Engine (`backend/app/services/transcription_service.py`)**:
+  - Embedded `faster-whisper` (v1.2.1) running completely offline on the backend without sending audio to external APIs.
+  - Initialized as a cached thread-safe singleton (`TranscriptionService.get_model()`), loading the weights once and reusing across all requests.
+  - Model configured via environment variables (`WHISPER_MODEL_SIZE=medium`, device `cpu`, compute type `int8`, beam size `5`).
+  - Seamlessly upgradable to `large-v3` by changing `WHISPER_MODEL_SIZE=large-v3` in `.env` without modifying code.
+  - Integrated resilient fallback: if an invalid model name or corrupted weights are configured, automatically falls back to `tiny`.
+  - PyAV 19+ compatibility fix: resolved `metadata_errors` incompatibility by monkeypatching `av.open` to safely filter out deprecated kwargs.
+  - Multi-dialect VAD handling: automatically disables aggressive Silero VAD filtering if silence is falsely detected on short audio notes, preventing dropped transcripts.
+
+#### 2. Strict Spoken Language Preservation & Detection
+- **Non-Translation Guarantee (`task="transcribe"`)**:
+  - The model transcribes audio in the original spoken language and script. Spoken Hindi and Tamil are never translated into English.
+  - Returns detected ISO-639-1 code (`hi`, `ta`, `en`, `bn`, `te`, etc.), human-readable language name, and confidence score (`0.0 - 1.0`).
+  - Native script preserved: Hindi is transcribed in Hindustani/Devanagari, Tamil in Tamil script (`\u0B80 - \u0BFF`), and English in English.
+
+#### 3. Asynchronous Background Processing & Zero Retention
+- **Non-blocking Upload Pipeline (`POST /api/voice`)**:
+  - Endpoint validates audio format, MIME type, size (≤5MB), and duration (≤2 min), saves to temporary spool, and returns upload token immediately (`status: "received"`).
+  - Transcription runs asynchronously via FastAPI `BackgroundTasks` without blocking HTTP requests.
+- **Strict Zero-Retention Privacy Guarantee**:
+  - Temporary audio files (`backend/storage/voice_notes/{token}.{ext}`) are deleted immediately inside a `finally` block upon completion of transcription, regardless of whether inference succeeded or failed.
+  - No customer audio is permanently stored on the server.
+  - System paths and internal tracebacks are strictly excluded from API responses.
+- **Status Endpoint (`GET /api/voice/status/{token}`)**:
+  - Returns current job lifecycle: `received` ➔ `transcribing` ➔ `completed` or `failed`.
+  - On `completed`: returns `transcript`, `language`, `language_name`, and `language_probability`.
+
+#### 4. Frontend Studio Integration
+- **Transcription UI & Stepper (`saathi-ai-landing/index.html`, `styles.css`, `script.js`)**:
+  - Added dedicated stepper state: **Uploading ➔ Received ➔ Transcribing ➔ Completed**.
+  - Polls status every 1.5s until completion or timeout.
+  - On completion: renders sleek **Transcript Card** with national flag badge (🇮🇳 Hindi, 🇮🇳 Tamil, 🇬🇧 English), detected confidence score, and native transcript text box.
+  - One-click **Copy Transcript** button with animated clipboard feedback.
+  - Friendly error handling with **Retry Job** button allowing instant re-submission without re-recording.
+
+#### 5. Synthetic Scam Voice-Note Dataset & Evaluation
+- Generated 5 native synthetic scam voice-note audio samples in `backend/tests/test_data/synthetic_scams/`:
+  1. `sample1_bank_otp_hindi.wav`: Fake bank manager requesting OTP (Hindi, Voice: Lekha).
+  2. `sample2_kyc_suspension_hindi.wav`: Fraudulent KYC deactivation threat (Hindi, Voice: Lekha).
+  3. `sample3_lottery_prize_tamil.wav`: Lottery prize registration fee scam (Tamil, Voice: Vani).
+  4. `sample4_account_freeze_tamil.wav`: Fake account freeze threat (Tamil, Voice: Vani).
+  5. `sample5_customer_support_pin_english.wav`: Fraudulent debit card support asking for ATM PIN (English, Voice: Rishi).
+- Created `manifest.json` detailing scenario, speaker, script, language, and keywords for each sample.
+- Built automated test suite `backend/tests/test_transcription.py` verifying all 5 samples, language detection, non-translation, zero-retention deletion, and end-to-end API polling.
+- All 24 tests passed (16 in `test_voice.py`, 8 in `test_transcription.py`).
+
+### Phase 2.5: Voice Note Recording, Validation & Upload System (Completed: 2026-10-26)
+
+#### 1. Frontend Implementation
+- **Voice Note Studio Interface (`saathi-ai-landing/index.html`)**:
+  - Embedded modern, mobile-friendly Studio with a large circular **Record** button, pulsing ripple animations, and digital timer (`00:00 / 02:00`).
+  - Web Audio API dynamic 20-bar frequency visualizer animating live during voice recording.
+  - Recording controls: **Start, Pause, Resume, Stop, and Discard/Delete**.
+  - Integrated preview player for playback before sending.
+  - **Audio File Upload Tab**: Drag-and-drop zone with support for `.webm`, `.ogg`, `.mp3`, `.wav`, and `.m4a` files (up to 5 MB and 2 minutes duration).
+  - Real-time `XMLHttpRequest` upload progress bar (`0% - 100%`) with dedicated stepper: Uploading ➔ Received ➔ Processing ➔ Completed.
+  - Status polling client with 1.5s interval and copyable cryptographic token card.
+
+#### 2. Backend & Security Architecture
+- **Voice Ingestion Endpoint (`POST /api/voice`)**:
+  - Multi-part form-data receiver with zero credential retention policy.
+  - Multi-tier validation: rejects empty files (HTTP 400), oversized files > 5MB (HTTP 413), and recordings > 2 minutes / 120s (HTTP 400).
+  - Magic byte inspection validates actual binary headers (EBML/WebM, RIFF/WAV, OggS, ID3/MPEG, ftyp/M4A), rejecting forged files (HTTP 415).
+  - Audio duration validated using `tinytag`, `mutagen`, and `ebmlite`.
+  - Cryptographically secure token (`secrets.token_urlsafe(32)`) assigned to each upload.
+  - Safe storage: files saved with sanitized `{token}.{format}` under `backend/storage/voice_notes`. Internal paths and server details are strictly isolated and never leaked in API responses.
+- **Status Endpoint (`GET /api/voice/status/{token}`)**:
+  - Polling endpoint returning upload status (`received`, `processing`, `completed`, `failed`), sanitized metadata, and format.
+- **Database & Storage Models**:
+  - Added `VoiceUpload` SQLAlchemy model in [`backend/app/models.py`](file:///Users/sumitsinha/Documents/Saathi%20AI/backend/app/models.py) with 24-hour expiration policy.
+  - Added resilient memory fallback cache for offline development.
+- **Automated Testing Suite**:
+  - Created 16 comprehensive automated tests in [`backend/tests/test_voice.py`](file:///Users/sumitsinha/Documents/Saathi%20AI/backend/tests/test_voice.py) covering WAV, MP3, OGG, WebM, oversized payloads, excessive durations, empty files, lifecycle updates, and browser HTML serving.
+  - Full project test suite passed with 100% success rate (33/33 tests).
 
 ### Phase 2: WhatsApp Webhook and Echo Bot (Completed: 2026-10-25)
 

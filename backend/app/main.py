@@ -3,21 +3,28 @@ from datetime import datetime, timezone
 from typing import Any, Dict
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, status
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 import httpx
 from sqlalchemy import text
 
 from backend.app.config import settings
 from backend.app.database import engine, init_db
 from backend.app.routers.webhook import router as webhook_router
+from backend.app.routers.voice import router as voice_router
+
+LANDING_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "saathi-ai-landing")
+)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: ensure tables exist
     await init_db()
+    # Ensure voice upload directory exists
+    os.makedirs(settings.VOICE_UPLOAD_DIR, exist_ok=True)
     yield
     # Shutdown
     if engine is not None:
@@ -33,7 +40,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Enable CORS for Next.js portal
+# Enable CORS for frontend and mobile access
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -44,21 +51,43 @@ app.add_middleware(
 
 # Register routers
 app.include_router(webhook_router)
+app.include_router(voice_router)
 
 
-@app.get("/", tags=["General"])
-async def root() -> Dict[str, Any]:
+@app.api_route("/", methods=["GET", "HEAD"], tags=["General"])
+async def root(request: Request) -> Any:
     """
-    Root endpoint returning service identity and quick links.
+    Root endpoint.
+    Serves the modern mobile-friendly voice-recording home page by default,
+    or service identity JSON when explicitly requested via Accept: application/json.
     """
-    return {
-        "name": settings.APP_NAME,
-        "environment": settings.APP_ENV,
-        "status": "operational",
-        "documentation": "/docs",
-        "health": "/health",
-        "message": "Welcome to Saathi AI. Emergency cybercrime assistance platform.",
-    }
+    index_file = os.path.join(LANDING_DIR, "index.html")
+    accept = request.headers.get("accept", "").lower()
+
+    if accept == "application/json" or not os.path.exists(index_file):
+        return {
+            "name": settings.APP_NAME,
+            "environment": settings.APP_ENV,
+            "status": "operational",
+            "documentation": "/docs",
+            "health": "/health",
+            "voice_api": "/api/voice",
+            "message": "Welcome to Saathi AI. Emergency cybercrime assistance platform.",
+        }
+
+    return FileResponse(index_file)
+
+
+@app.api_route("/styles.css", methods=["GET", "HEAD"], include_in_schema=False)
+async def styles_css() -> FileResponse:
+    return FileResponse(os.path.join(LANDING_DIR, "styles.css"), media_type="text/css")
+
+
+@app.api_route("/script.js", methods=["GET", "HEAD"], include_in_schema=False)
+async def script_js() -> FileResponse:
+    return FileResponse(os.path.join(LANDING_DIR, "script.js"), media_type="application/javascript")
+
+
 
 
 @app.get("/health", tags=["Monitoring"])

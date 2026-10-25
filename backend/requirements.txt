@@ -11,3 +11,7 @@ faster-whisper>=1.0.0
 ollama>=0.3.0
 pytest>=8.0.0
 pytest-asyncio>=0.24.0
+python-multipart>=0.0.12
+tinytag>=2.0.0
+mutagen>=1.47.0
+ebmlite>=3.3.0
