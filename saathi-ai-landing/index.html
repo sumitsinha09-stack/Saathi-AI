@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saathi AI — Your AI-Powered Companion</title>
+  <meta name="description" content="Saathi AI is an intelligent emergency companion on WhatsApp providing voice-first cybercrime reporting guidance, bank dispute generation, and step-by-step assistance for fraud victims in India.">
+  <meta name="keywords" content="Saathi AI, cybercrime assistant, WhatsApp AI, cyber fraud India, voice note complaint, 1930 cyber helpline">
+  <meta property="og:title" content="Saathi AI — Your AI-Powered Companion">
+  <meta property="og:description" content="Accessible, voice-first assistance on WhatsApp for cyber-fraud victims during the critical golden hour.">
+  <meta property="og:type" content="website">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="#" class="nav-logo" id="nav-logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="brand-name">Saathi AI</span>
+          <span class="brand-tag">Companion</span>
+        </div>
+      </a>
+
+      <div class="status-badge" id="status-badge">
+        <span class="pulse-dot"></span>
+        <span>Prototype • In Active Development</span>
+      </div>
+
+      <nav class="nav-links" id="nav-links">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#how-it-works" class="nav-link">How It Works</a>
+        <a href="#safety" class="nav-link">Privacy & Safety</a>
+        <a href="#faq" class="nav-link">FAQ</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="#whatsapp-cta" class="btn btn-primary btn-sm" id="nav-whatsapp-btn">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+          <span>Connect</span>
+        </a>
+        <button class="mobile-toggle" id="mobile-toggle" aria-label="Toggle navigation menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main>
+    <section class="hero-section" id="hero">
+      <div class="hero-bg-glow"></div>
+      <div class="container hero-container">
+        
+        <div class="hero-content">
+          <div class="announcement-pill" id="hero-badge">
+            <span class="pill-badge">WhatsApp First</span>
+            <span class="pill-text">Emergency Cyber-Assistance for India</span>
+          </div>
+
+          <h1 class="hero-title" id="hero-title">
+            Meet Saathi AI — <br>
+            <span class="text-gradient">Your AI-Powered Companion</span>
+          </h1>
+
+          <p class="hero-subtitle" id="hero-subtitle">
+            An intelligent, conversational assistant designed to help cyber-fraud victims during the critical "Golden Hour". Speak naturally via WhatsApp voice notes in Hindi or English — Saathi AI structures your complaint, drafts bank dispute notices, and guides you to emergency relief.
+          </p>
+
+          <div class="hero-cta-group">
+            <a href="#how-it-works" class="btn btn-primary btn-lg" id="cta-explore-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polygon points="10 8 16 12 10 16 10 8"></polygon>
+              </svg>
+              <span>See How It Works</span>
+            </a>
+            <a href="#features" class="btn btn-secondary btn-lg" id="cta-features-btn">
+              <span>Explore Features</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </a>
+          </div>
+
+          <div class="hero-trust-metrics">
+            <div class="trust-item">
+              <span class="trust-icon">🛡️</span>
+              <div class="trust-text">
+                <strong>Zero Credentials</strong>
+                <span>Never asks for OTPs or PINs</span>
+              </div>
+            </div>
+            <div class="trust-divider"></div>
+            <div class="trust-item">
+              <span class="trust-icon">🎙️</span>
+              <div class="trust-text">
+                <strong>Voice First</strong>
+                <span>Speak naturally in Indic accents</span>
+              </div>
+            </div>
+            <div class="trust-divider"></div>
+            <div class="trust-item">
+              <span class="trust-icon">🔒</span>
+              <div class="trust-text">
+                <strong>Audio Privacy</strong>
+                <span>Instant audio deletion post-transcription</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WhatsApp Chat Simulation Device -->
+        <div class="hero-visual">
+          <div class="chat-device-card" id="chat-simulation">
+            <div class="device-header">
+              <div class="wa-avatar">
+                <div class="wa-bot-avatar">SA</div>
+              </div>
+              <div class="wa-contact-info">
+                <div class="wa-name">Saathi AI Assistant <span class="verified-check">✓</span></div>
+                <div class="wa-status">Official Business Account • Demo</div>
+              </div>
+              <div class="wa-actions">
+                <span class="dot-menu">•••</span>
+              </div>
+            </div>
+
+            <div class="device-body" id="chat-messages">
+              <div class="wa-bubble wa-incoming" style="animation-delay: 0.1s;">
+                <div class="voice-note-preview">
+                  <div class="play-btn">▶</div>
+                  <div class="waveform">
+                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                  </div>
+                  <span class="voice-duration">0:14</span>
+                </div>
+                <div class="wa-time">10:42 AM</div>
+              </div>
+
+              <div class="wa-bubble wa-outgoing" style="animation-delay: 0.3s;">
+                <p>Hello! I was duped of ₹35,000 via a fake electricity bill link just 20 minutes ago. Please help!</p>
+                <div class="wa-time">10:42 AM <span class="blue-ticks">✓✓</span></div>
+              </div>
+
+              <div class="wa-bubble wa-incoming system-card" style="animation-delay: 0.5s;">
+                <div class="system-header">
+                  <span class="badge-tag">Incident Form Drafted</span>
+                </div>
+                <div class="form-preview">
+                  <p><strong>Case ID:</strong> SAI-2026-0814</p>
+                  <p><strong>Fraud Type:</strong> Phishing / Utility Bill Scam</p>
+                  <p><strong>Lost Amount:</strong> ₹35,000</p>
+                  <p><strong>Disputed UTR:</strong> 429184******</p>
+                </div>
+                <p class="verification-prompt">Is the above information accurate?</p>
+                <div class="chat-buttons">
+                  <button class="chat-btn btn-confirm">✅ Confirm</button>
+                  <button class="chat-btn btn-edit">✏️ Edit</button>
+                  <button class="chat-btn btn-cancel">❌ Cancel</button>
+                </div>
+                <div class="wa-time">10:43 AM</div>
+              </div>
+
+              <div class="wa-bubble wa-incoming" style="animation-delay: 0.7s;">
+                <p>⚡ <em>Confirmed! Generating your Bank Dispute Notice under RBI guidelines and preparing Cybercrime Complaint PDF...</em></p>
+                <div class="wa-time">10:43 AM</div>
+              </div>
+            </div>
+
+            <div class="device-footer">
+              <span class="type-icon">📎</span>
+              <div class="type-input">Type a message or hold mic...</div>
+              <span class="mic-icon">🎙️</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section" id="features">
+      <div class="container">
+        
+        <div class="section-header text-center">
+          <div class="section-tag" id="features-tag">Smart Capabilities</div>
+          <h2 class="section-title">Designed for Emergency Relief in India</h2>
+          <p class="section-description">
+            Cyber-financial fraud requires lightning-fast action before funds hop bank networks. Saathi AI eliminates tedious typing and empowers victims right inside WhatsApp.
+          </p>
+        </div>
+
+        <div class="features-grid">
+          
+          <div class="feature-card" id="feature-conversational">
+            <div class="card-icon-wrapper bg-green-soft">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="feature-svg">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+            </div>
+            <h3 class="card-title">Conversational AI on WhatsApp</h3>
+            <p class="card-text">
+              No complex mobile apps or confusing portals to download. Interact directly with Saathi AI on India’s most ubiquitous messaging app through simple text and natural language.
+            </p>
+            <div class="card-badge">WhatsApp Native</div>
+          </div>
+
+          <div class="feature-card" id="feature-voice">
+            <div class="card-icon-wrapper bg-teal-soft">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="feature-svg">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+                <line x1="8" y1="23" x2="16" y2="23"></line>
+              </svg>
+            </div>
+            <h3 class="card-title">Voice-Note Understanding</h3>
+            <p class="card-text">
+              Victims in panic often struggle to type. Simply record a WhatsApp voice note in Hindi, English, or Hinglish. Powered locally by open-source Faster-Whisper with Indic nuance support.
+            </p>
+            <div class="card-badge">Speech-to-Text</div>
+          </div>
+
+          <div class="feature-card" id="feature-structuring">
+            <div class="card-icon-wrapper bg-emerald-soft">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="feature-svg">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+            </div>
+            <h3 class="card-title">Structured Complaint Extraction</h3>
+            <p class="card-text">
+              Local LLMs automatically organize unstructured narratives into structured incident data: loss amount, fraudulent UPI ID, suspect bank info, timestamp, and scam category.
+            </p>
+            <div class="card-badge">Zero Paid APIs</div>
+          </div>
+
+          <div class="feature-card" id="feature-privacy">
+            <div class="card-icon-wrapper bg-cyan-soft">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="feature-svg">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <h3 class="card-title">Strict Privacy & Zero Credentials</h3>
+            <p class="card-text">
+              Engineered with safety guardrails: never asks for or stores OTPs, MPINs, or card CVVs. User audio notes are deleted immediately from memory following transcription.
+            </p>
+            <div class="card-badge">Privacy First</div>
+          </div>
+
+          <div class="feature-card" id="feature-bank-email">
+            <div class="card-icon-wrapper bg-indigo-soft">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="feature-svg">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+            </div>
+            <h3 class="card-title">Bank Dispute Auto-Drafting</h3>
+            <p class="card-text">
+              Generates formal dispute emails to the victim's bank grievance cell referencing RBI circulars on limited customer liability in unauthorized electronic transactions.
+            </p>
+            <div class="card-badge">In Development</div>
+          </div>
+
+          <div class="feature-card" id="feature-helpline">
+            <div class="card-icon-wrapper bg-rose-soft">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="feature-svg">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+            </div>
+            <h3 class="card-title">1930 Helpline Guidance</h3>
+            <p class="card-text">
+              Direct guidance to connect with the Citizen Financial Cyber Fraud Reporting and Management System (CFCFRMS) helpline 1930 for urgent freezing of transit funds.
+            </p>
+            <div class="card-badge">Emergency Ready</div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="workflow-section" id="how-it-works">
+      <div class="container">
+        
+        <div class="section-header text-center">
+          <div class="section-tag" id="how-tag">Simple 4-Step Flow</div>
+          <h2 class="section-title">How You Interact With Saathi AI</h2>
+          <p class="section-description">
+            From the moment unauthorized debit alerts arrive to submitting formal disputes, Saathi AI accompanies you through every step.
+          </p>
+        </div>
+
+        <div class="timeline-container">
+          
+          <div class="timeline-step">
+            <div class="step-marker">
+              <span class="step-num">1</span>
+            </div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3 class="step-title">Send a Voice Note or Message</h3>
+                <span class="step-tag">WhatsApp Input</span>
+              </div>
+              <p class="step-desc">
+                Simply message the official Saathi AI WhatsApp number. Speak or type what happened: when money was debited, what app you used, and any links, phone numbers, or QR codes involved.
+              </p>
+              <div class="step-note">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                <span>Voice notes are transcribed locally & automatically erased immediately.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="timeline-step">
+            <div class="step-marker">
+              <span class="step-num">2</span>
+            </div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3 class="step-title">AI Structures Your Incident Details</h3>
+                <span class="step-tag">Local Intelligence</span>
+              </div>
+              <p class="step-desc">
+                The local AI engine parses the raw audio transcript into standard cybercrime fields: transaction reference numbers, beneficiary bank accounts, scam modus operandi, and dispute amounts.
+              </p>
+            </div>
+          </div>
+
+          <div class="timeline-step">
+            <div class="step-marker">
+              <span class="step-num">3</span>
+            </div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3 class="step-title">Review & Explicit Confirmation</h3>
+                <span class="step-tag">Consent Gate</span>
+              </div>
+              <p class="step-desc">
+                Saathi AI responds on WhatsApp with a clear summary and interactive buttons: <strong>Confirm</strong>, <strong>Edit</strong>, or <strong>Cancel</strong>. Zero reporting action is ever executed without your explicit tap.
+              </p>
+            </div>
+          </div>
+
+          <div class="timeline-step">
+            <div class="step-marker">
+              <span class="step-num">4</span>
+            </div>
+            <div class="step-content">
+              <div class="step-header">
+                <h3 class="step-title">Instant Relief Documents & Next Steps</h3>
+                <span class="step-tag">Action Phase</span>
+              </div>
+              <p class="step-desc">
+                Upon confirmation, you receive a pre-formatted Bank Dispute Email, an official Incident PDF, one-tap connection to 1930 Cyber Helpline, and a tracking timeline to monitor progress.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Safety & Privacy Commitment -->
+    <section class="safety-section" id="safety">
+      <div class="container">
+        <div class="safety-banner">
+          <div class="safety-content">
+            <div class="safety-badge">Security Guardrails</div>
+            <h2 class="safety-title">Built with Strict Ethical & Privacy Constraints</h2>
+            <p class="safety-desc">
+              When victims are under stress, security matters most. Saathi AI enforces strict principles to guarantee that sensitive credentials remain completely protected:
+            </p>
+            <ul class="safety-list">
+              <li>
+                <span class="check-icon">✓</span>
+                <div><strong>Never Solicits or Stores Passwords/PINs:</strong> Saathi AI will NEVER ask for your OTP, MPIN, ATM PIN, or CVV. If mentioned accidentally in voice notes, it is actively scrubbed.</div>
+              </li>
+              <li>
+                <span class="check-icon">✓</span>
+                <div><strong>Ephemeral Audio Spooling:</strong> Audio recordings are unlinked and permanently deleted from disk immediately after transcription.</div>
+              </li>
+              <li>
+                <span class="check-icon">✓</span>
+                <div><strong>Transparent Simulation Labeling:</strong> Any mock features (such as prototype FIR simulations) are prominently watermarked as <code>Demo mode</code> to avoid misrepresentation.</div>
+              </li>
+            </ul>
+          </div>
+          <div class="safety-visual">
+            <div class="shield-graphic">
+              <div class="shield-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shield-icon">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+              </div>
+              <span class="shield-label">100% Consent Driven</span>
+              <span class="shield-sub">Zero reporting without victim confirmation</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive FAQ Section -->
+    <section class="faq-section" id="faq">
+      <div class="container">
+        <div class="section-header text-center">
+          <div class="section-tag">Common Questions</div>
+          <h2 class="section-title">Frequently Asked Questions</h2>
+        </div>
+
+        <div class="faq-accordion" id="faq-accordion">
+          
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false">
+              <span>Is Saathi AI live for the general public right now?</span>
+              <span class="faq-arrow">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>
+                No. Saathi AI is currently in active prototype and developer evaluation phase. Live WhatsApp messaging is currently undergoing testing with registered test recipient numbers before public availability.
+              </p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false">
+              <span>Does Saathi AI use paid AI APIs like OpenAI or Claude?</span>
+              <span class="faq-arrow">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>
+                No. Saathi AI is built strictly with self-hosted open-source models (Faster-Whisper for transcription and Ollama running Qwen models for extraction), ensuring privacy and sustainability without recurring API costs.
+              </p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false">
+              <span>What is the Golden Hour in cyber-fraud?</span>
+              <span class="faq-arrow">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>
+                The first 2 to 3 hours immediately following an unauthorized transaction represent the critical window when fraudulent funds can be flagged and frozen in transit across beneficiary accounts before scammers cash out via ATMs or crypto.
+              </p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false">
+              <span>What languages can I speak to Saathi AI?</span>
+              <span class="faq-arrow">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>
+                The speech recognition engine supports Hindi, English, and conversational Hinglish commonly used across India, allowing you to narrate your situation naturally without formal phrasing.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- WhatsApp CTA Banner -->
+    <section class="cta-banner-section" id="whatsapp-cta">
+      <div class="container">
+        <div class="cta-banner-card">
+          <div class="cta-banner-content">
+            <h2 class="cta-title">Experience the Prototype on WhatsApp</h2>
+            <p class="cta-subtitle">
+              Send a test voice note or text message to evaluate the conversational response and verification loop.
+            </p>
+            <div class="cta-actions">
+              <a href="https://wa.me/?text=Hello%20Saathi%20AI" target="_blank" rel="noopener noreferrer" class="btn btn-whatsapp-large" id="cta-launch-wa">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                </svg>
+                <span>Open WhatsApp Test</span>
+              </a>
+              <span class="cta-note">*Available for pre-authorized testing phone numbers</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" id="footer">
+    <div class="container footer-container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="logo-icon footer-logo-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="footer-brand-title">Saathi AI</h3>
+            <p class="footer-brand-desc">Emergency WhatsApp cyber-fraud assistance for victims in India.</p>
+          </div>
+        </div>
+
+        <div class="footer-links-group">
+          <div class="footer-col">
+            <h4>Project</h4>
+            <a href="#hero">Overview</a>
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How It Works</a>
+            <a href="#safety">Security Principles</a>
+          </div>
+
+          <div class="footer-col">
+            <h4>Technology</h4>
+            <span>FastAPI Backend</span>
+            <span>Meta WhatsApp Cloud API</span>
+            <span>Faster-Whisper STT</span>
+            <span>Ollama & Qwen3 LLM</span>
+          </div>
+
+          <div class="footer-col">
+            <h4>Contact & Support</h4>
+            <p class="contact-item"><strong>Developer:</strong> Saathi AI Team</p>
+            <p class="contact-item"><strong>Email:</strong> <a href="mailto:support@saathiai.example">support@saathiai.example</a></p>
+            <p class="contact-item"><strong>National Helpline:</strong> Dial 1930 (India)</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p class="copyright">© 2026 Saathi AI. All rights reserved. Built as an open prototype for Indian cybercrime relief.</p>
+        <p class="disclaimer">Disclaimer: Saathi AI is a technical aid and reporting assistant. In case of financial fraud, always immediately dial the National Cyber Crime Helpline at 1930 and inform your bank's official card/account blocking desk.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
