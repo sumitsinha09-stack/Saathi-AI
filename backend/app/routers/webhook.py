@@ -73,6 +73,16 @@ async def receive_webhook(
 
     # 1. Validate X-Hub-Signature-256 if app secret is configured
     if app_secret:
+        if app_secret in ("your_meta_app_secret", "your_whatsapp_app_secret"):
+            logger.warning(
+                "Rejected POST /webhook: META_APP_SECRET contains placeholder value '%s'. "
+                "Update .env with your real App Secret from Meta Developer Dashboard.",
+                app_secret,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Invalid webhook signature: placeholder META_APP_SECRET in .env",
+            )
         if not verify_signature(raw_body, x_hub_signature_256, app_secret):
             logger.warning("Rejected POST /webhook: Invalid X-Hub-Signature-256 header.")
             raise HTTPException(

@@ -47,10 +47,16 @@
   - Dispatches via FastAPI `BackgroundTasks` so Meta webhook handshake never blocks.
   - Updates delivery status (`acknowledged` / `failed`) in PostgreSQL.
   - Audio and voice notes acknowledged without downloading or transcribing in this phase.
+- **Ollama AI Integration & Dynamic Response Pipeline**:
+  - Implemented `AIService` in [`backend/app/services/ai.py`](file:///Users/sumitsinha/Documents/Saathi%20AI/backend/app/services/ai.py) replacing static echo with real-time Ollama assistance.
+  - Guided prompt instructions for Indian cyber-fraud victims (1930 Helpline, bank account blocking, cybercrime.gov.in).
+  - Robust fallback: automatically provides emergency guidance if Ollama is unreachable or times out.
+  - Added `mark_message_as_read` to send WhatsApp read receipts via Meta Cloud API.
+- **Automated Meta Graph API Diagnostics**:
+  - Implemented [`backend/scripts/verify_meta_setup.py`](file:///Users/sumitsinha/Documents/Saathi%20AI/backend/scripts/verify_meta_setup.py) for programmatic token inspection, phone number verification, WABA auto-discovery, and automatic WABA app subscription.
 - **Automated Testing & Quality Assurance**:
-  - Built comprehensive test suite [`backend/tests/test_webhook.py`](file:///Users/sumitsinha/Documents/Saathi%20AI/backend/tests/test_webhook.py) with 12 test cases.
-  - Configured `pytest.ini` with isolated SQLite in-memory test database fixture.
-  - Verified 100% pass rate (`12 passed in 0.14s`).
+  - Built comprehensive test suites with 17 tests across [`test_webhook.py`](file:///Users/sumitsinha/Documents/Saathi%20AI/backend/tests/test_webhook.py) and [`test_ai_service.py`](file:///Users/sumitsinha/Documents/Saathi%20AI/backend/tests/test_ai_service.py).
+  - 100% pass rate (`17 passed in 0.44s`).
 - **Live Local Server & Tunneling**:
   - Tested live against local Uvicorn instance on port 8000 and Docker PostgreSQL on port 5433.
   - Documented setup instructions for `ngrok` and `cloudflared` tunneling.

@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     WHATSAPP_VERIFY_TOKEN: str = Field(default="samaran_dev_verify_token_2026")
     WHATSAPP_ACCESS_TOKEN: str = Field(default="")
     WHATSAPP_PHONE_NUMBER_ID: str = Field(default="")
+    WHATSAPP_BUSINESS_ACCOUNT_ID: str = Field(default="")
     META_APP_SECRET: str = Field(default="")
     WHATSAPP_APP_SECRET: str = Field(default="")
     WHATSAPP_API_VERSION: str = Field(default="v21.0")

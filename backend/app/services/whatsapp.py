@@ -9,6 +9,7 @@ from sqlalchemy import select
 
 from backend.app.config import settings
 from backend.app.models import ProcessedMessage
+from backend.app.services.ai import ai_service
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +65,32 @@ class WhatsAppService:
         version = self.api_version or settings.WHATSAPP_API_VERSION
         return f"{self.base_url}/{version}/{phone_id}/messages"
 
+    async def mark_message_as_read(self, message_id: str) -> bool:
+        """
+        Marks an incoming WhatsApp message as read via the Cloud API.
+        """
+        token = self.access_token or settings.WHATSAPP_ACCESS_TOKEN
+        phone_id = self.phone_number_id or settings.WHATSAPP_PHONE_NUMBER_ID
+        if not token or not phone_id or token in ("", "your_meta_access_token"):
+            return False
+
+        payload = {
+            "messaging_product": "whatsapp",
+            "status": "read",
+            "message_id": message_id,
+        }
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                resp = await client.post(self.messages_endpoint, json=payload, headers=headers)
+                return resp.status_code in (200, 201)
+        except Exception as exc:
+            logger.debug(f"Could not mark message {message_id} as read: {exc}")
+            return False
+
     async def send_acknowledgment(
         self,
         recipient_id: str,
@@ -73,29 +100,33 @@ class WhatsAppService:
         session_factory: Optional[Any] = None,
     ) -> bool:
         """
-        Sends an echo acknowledgment message back to the sender via WhatsApp Cloud API.
-        Format for text: 'Saathi AI received your message: <message>'
+        Generates a Saathi AI response using Ollama and dispatches it back to the sender
+        via the official WhatsApp Cloud API.
         Never logs access tokens or sensitive recipient details.
         """
         token = self.access_token or settings.WHATSAPP_ACCESS_TOKEN
         phone_id = self.phone_number_id or settings.WHATSAPP_PHONE_NUMBER_ID
 
-        if not token or not phone_id:
+        if not token or not phone_id or token in ("", "your_meta_access_token"):
             logger.warning(
                 "WhatsApp Cloud API credentials (WHATSAPP_ACCESS_TOKEN or WHATSAPP_PHONE_NUMBER_ID) "
-                "not configured. Skipping outbound message delivery."
+                "not configured or set to placeholder. Skipping outbound message delivery."
             )
             return False
 
+        # Mark message as read asynchronously in WhatsApp
+        await self.mark_message_as_read(reply_to_message_id)
+
+        # Generate response using Ollama AI Service or fall back gracefully
         if incoming_text:
-            reply_body = f"Saathi AI received your message: {incoming_text}"
+            reply_body = await ai_service.generate_response(incoming_text)
         elif message_type == "audio":
             reply_body = (
                 "Saathi AI received your voice note. "
-                "Our system will help you prepare your cybercrime report in the next step."
+                "Our system is preparing to transcribe and assist your cybercrime report."
             )
         else:
-            reply_body = "Saathi AI received your message."
+            reply_body = "Saathi AI received your message. How can we assist you with cybercrime reporting today?"
 
         payload: Dict[str, Any] = {
             "messaging_product": "whatsapp",

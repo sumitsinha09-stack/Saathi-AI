@@ -321,22 +321,28 @@ async def test_whatsapp_service_send_acknowledgment_success():
         base_url="https://mock.graph.facebook.com",
     )
 
-    async def mock_post(url, **kwargs):
-        assert url == "https://mock.graph.facebook.com/v21.0/12345678/messages"
-        json_data = kwargs.get("json", {})
-        assert json_data["messaging_product"] == "whatsapp"
-        assert json_data["to"] == "919999999999"
-        assert json_data["text"]["body"] == "Saathi AI received your message: Hello"
-        assert json_data["context"]["message_id"] == "wamid.inbound123"
-        return httpx.Response(status_code=200, json={"messages": [{"id": "wamid.outbound456"}]})
+    with patch(
+        "backend.app.services.whatsapp.ai_service.generate_response",
+        return_value="Saathi AI: Please call 1930 immediately.",
+    ):
+        async def mock_post(url, **kwargs):
+            json_data = kwargs.get("json", {})
+            if json_data.get("status") == "read":
+                return httpx.Response(status_code=200, json={"success": True})
+            assert url == "https://mock.graph.facebook.com/v21.0/12345678/messages"
+            assert json_data["messaging_product"] == "whatsapp"
+            assert json_data["to"] == "919999999999"
+            assert "1930" in json_data["text"]["body"]
+            assert json_data["context"]["message_id"] == "wamid.inbound123"
+            return httpx.Response(status_code=200, json={"messages": [{"id": "wamid.outbound456"}]})
 
-    with patch("httpx.AsyncClient.post", side_effect=mock_post):
-        result = await service.send_acknowledgment(
-            recipient_id="919999999999",
-            reply_to_message_id="wamid.inbound123",
-            incoming_text="Hello",
-        )
-        assert result is True
+        with patch("httpx.AsyncClient.post", side_effect=mock_post):
+            result = await service.send_acknowledgment(
+                recipient_id="919999999999",
+                reply_to_message_id="wamid.inbound123",
+                incoming_text="Hello",
+            )
+            assert result is True
 
 
 @pytest.mark.asyncio
