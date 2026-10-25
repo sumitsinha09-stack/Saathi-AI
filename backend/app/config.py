@@ -23,12 +23,18 @@ class Settings(BaseSettings):
     WHISPER_DEVICE: str = Field(default="cpu")
     WHISPER_COMPUTE_TYPE: str = Field(default="int8")
 
-    # WhatsApp Cloud API
+    # WhatsApp Cloud API & Meta Configuration
     WHATSAPP_VERIFY_TOKEN: str = Field(default="samaran_dev_verify_token_2026")
-    WHATSAPP_ACCESS_TOKEN: str = Field(default="your_meta_access_token")
-    WHATSAPP_PHONE_NUMBER_ID: str = Field(default="your_phone_number_id")
+    WHATSAPP_ACCESS_TOKEN: str = Field(default="")
+    WHATSAPP_PHONE_NUMBER_ID: str = Field(default="")
+    META_APP_SECRET: str = Field(default="")
     WHATSAPP_APP_SECRET: str = Field(default="")
     WHATSAPP_API_VERSION: str = Field(default="v21.0")
+
+    @property
+    def effective_app_secret(self) -> str:
+        """Returns META_APP_SECRET or WHATSAPP_APP_SECRET interchangeably."""
+        return self.META_APP_SECRET or self.WHATSAPP_APP_SECRET
 
     model_config = SettingsConfigDict(
         env_file=".env",

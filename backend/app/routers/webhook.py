@@ -42,7 +42,7 @@ async def verify_webhook(
             detail="Invalid hub.mode",
         )
 
-    # Timing-safe token comparison
+    # Timing-safe token comparison against WHATSAPP_VERIFY_TOKEN
     if not hmac.compare_digest(hub_verify_token, settings.WHATSAPP_VERIFY_TOKEN):
         logger.warning("GET /webhook token mismatch.")
         raise HTTPException(
@@ -62,17 +62,18 @@ async def receive_webhook(
     x_hub_signature_256: Optional[str] = Header(None, alias="X-Hub-Signature-256"),
 ) -> Dict[str, Any]:
     """
-    WhatsApp Event Receiver (POST /webhook).
-    - Verifies HMAC-SHA256 signature against WHATSAPP_APP_SECRET.
+    WhatsApp Event Receiver & Echo Bot (POST /webhook).
+    - Verifies HMAC-SHA256 signature against META_APP_SECRET.
     - Idempotently processes incoming messages with PostgreSQL deduplication.
-    - Queues acknowledgment response asynchronously.
+    - Queues 'Saathi AI received your message: <message>' echo reply asynchronously.
     - Promptly returns HTTP 200 OK to Meta.
     """
     raw_body = await request.body()
+    app_secret = settings.effective_app_secret
 
     # 1. Validate X-Hub-Signature-256 if app secret is configured
-    if settings.WHATSAPP_APP_SECRET:
-        if not verify_signature(raw_body, x_hub_signature_256, settings.WHATSAPP_APP_SECRET):
+    if app_secret:
+        if not verify_signature(raw_body, x_hub_signature_256, app_secret):
             logger.warning("Rejected POST /webhook: Invalid X-Hub-Signature-256 header.")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -80,7 +81,7 @@ async def receive_webhook(
             )
     else:
         logger.warning(
-            "WHATSAPP_APP_SECRET not configured. Webhook running in insecure development mode."
+            "META_APP_SECRET not configured. Webhook running without signature verification."
         )
 
     # 2. Parse JSON payload safely
@@ -114,9 +115,21 @@ async def receive_webhook(
                 message_id = msg.get("id")
                 sender_id = msg.get("from")
                 msg_type = msg.get("type", "unknown")
+                timestamp = msg.get("timestamp")
 
                 if not message_id or not sender_id:
                     continue
+
+                # Extract text body if type is text
+                incoming_text = None
+                if msg_type == "text":
+                    incoming_text = msg.get("text", {}).get("body", "")
+
+                logger.info(
+                    f"Received incoming WhatsApp message: id={message_id}, "
+                    f"from=...{sender_id[-4:] if len(sender_id) >= 4 else '****'}, "
+                    f"type={msg_type}, timestamp={timestamp}"
+                )
 
                 # 4. Idempotency Check with PostgreSQL
                 stmt = select(ProcessedMessage).where(ProcessedMessage.message_id == message_id)
@@ -143,11 +156,13 @@ async def receive_webhook(
                     logger.error(f"Database error saving processed message {message_id}: {db_exc}")
                     continue
 
-                # 5. Dispatch Acknowledgment Asynchronously
+                # 5. Dispatch Echo Acknowledgment Asynchronously
                 background_tasks.add_task(
                     whatsapp_service.send_acknowledgment,
                     recipient_id=sender_id,
                     reply_to_message_id=message_id,
+                    incoming_text=incoming_text,
+                    message_type=msg_type,
                     session_factory=AsyncSessionLocal,
                 )
                 processed_count += 1

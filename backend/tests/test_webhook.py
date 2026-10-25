@@ -326,7 +326,7 @@ async def test_whatsapp_service_send_acknowledgment_success():
         json_data = kwargs.get("json", {})
         assert json_data["messaging_product"] == "whatsapp"
         assert json_data["to"] == "919999999999"
-        assert json_data["text"]["body"] == ACKNOWLEDGMENT_TEXT
+        assert json_data["text"]["body"] == "Saathi AI received your message: Hello"
         assert json_data["context"]["message_id"] == "wamid.inbound123"
         return httpx.Response(status_code=200, json={"messages": [{"id": "wamid.outbound456"}]})
 
@@ -334,6 +334,7 @@ async def test_whatsapp_service_send_acknowledgment_success():
         result = await service.send_acknowledgment(
             recipient_id="919999999999",
             reply_to_message_id="wamid.inbound123",
+            incoming_text="Hello",
         )
         assert result is True
 

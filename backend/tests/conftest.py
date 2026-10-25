@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 # Set testing environment variables before importing app
 os.environ["APP_ENV"] = "testing"
 os.environ["WHATSAPP_VERIFY_TOKEN"] = "test_verify_token_123"
+os.environ["META_APP_SECRET"] = "test_secret_key_456"
 os.environ["WHATSAPP_APP_SECRET"] = "test_secret_key_456"
 os.environ["WHATSAPP_ACCESS_TOKEN"] = "test_access_token_789"
 os.environ["WHATSAPP_PHONE_NUMBER_ID"] = "1000123456789"
@@ -15,6 +16,7 @@ os.environ["WHATSAPP_API_VERSION"] = "v21.0"
 
 from backend.app.config import settings
 settings.WHATSAPP_VERIFY_TOKEN = "test_verify_token_123"
+settings.META_APP_SECRET = "test_secret_key_456"
 settings.WHATSAPP_APP_SECRET = "test_secret_key_456"
 settings.WHATSAPP_ACCESS_TOKEN = "test_access_token_789"
 settings.WHATSAPP_PHONE_NUMBER_ID = "1000123456789"

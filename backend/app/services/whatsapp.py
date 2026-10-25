@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 import httpx
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from backend.app.config import settings
@@ -13,10 +12,7 @@ from backend.app.models import ProcessedMessage
 
 logger = logging.getLogger(__name__)
 
-ACKNOWLEDGMENT_TEXT = (
-    "Thank you for contacting Samaran. We have received your message. "
-    "Our system will help you prepare your cybercrime report in the next step."
-)
+ACKNOWLEDGMENT_TEXT = "Saathi AI received your message."
 
 
 def verify_signature(payload_bytes: bytes, signature_header: Optional[str], app_secret: str) -> bool:
@@ -25,7 +21,7 @@ def verify_signature(payload_bytes: bytes, signature_header: Optional[str], app_
     Uses timing-safe comparison to prevent timing attacks.
     """
     if not app_secret:
-        logger.warning("WHATSAPP_APP_SECRET is not configured. Webhook signature check will fail.")
+        logger.warning("Meta App Secret is not configured. Webhook signature check cannot be validated.")
         return False
 
     if not signature_header:
@@ -64,18 +60,43 @@ class WhatsAppService:
 
     @property
     def messages_endpoint(self) -> str:
-        return f"{self.base_url}/{self.api_version}/{self.phone_number_id}/messages"
+        phone_id = self.phone_number_id or settings.WHATSAPP_PHONE_NUMBER_ID
+        version = self.api_version or settings.WHATSAPP_API_VERSION
+        return f"{self.base_url}/{version}/{phone_id}/messages"
 
     async def send_acknowledgment(
         self,
         recipient_id: str,
         reply_to_message_id: str,
+        incoming_text: Optional[str] = None,
+        message_type: str = "text",
         session_factory: Optional[Any] = None,
     ) -> bool:
         """
-        Sends standard acknowledgment message to the sender via WhatsApp Cloud API.
+        Sends an echo acknowledgment message back to the sender via WhatsApp Cloud API.
+        Format for text: 'Saathi AI received your message: <message>'
         Never logs access tokens or sensitive recipient details.
         """
+        token = self.access_token or settings.WHATSAPP_ACCESS_TOKEN
+        phone_id = self.phone_number_id or settings.WHATSAPP_PHONE_NUMBER_ID
+
+        if not token or not phone_id:
+            logger.warning(
+                "WhatsApp Cloud API credentials (WHATSAPP_ACCESS_TOKEN or WHATSAPP_PHONE_NUMBER_ID) "
+                "not configured. Skipping outbound message delivery."
+            )
+            return False
+
+        if incoming_text:
+            reply_body = f"Saathi AI received your message: {incoming_text}"
+        elif message_type == "audio":
+            reply_body = (
+                "Saathi AI received your voice note. "
+                "Our system will help you prepare your cybercrime report in the next step."
+            )
+        else:
+            reply_body = "Saathi AI received your message."
+
         payload: Dict[str, Any] = {
             "messaging_product": "whatsapp",
             "recipient_type": "individual",
@@ -83,7 +104,7 @@ class WhatsAppService:
             "type": "text",
             "text": {
                 "preview_url": False,
-                "body": ACKNOWLEDGMENT_TEXT,
+                "body": reply_body,
             },
             "context": {
                 "message_id": reply_to_message_id,
@@ -91,7 +112,7 @@ class WhatsAppService:
         }
 
         headers = {
-            "Authorization": f"Bearer {self.access_token}",
+            "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
         }
 
@@ -106,7 +127,7 @@ class WhatsAppService:
 
                 if response.status_code in (200, 201):
                     logger.info(
-                        "WhatsApp acknowledgment dispatched successfully. "
+                        "WhatsApp echo response dispatched successfully. "
                         f"Recipient: ...{recipient_id[-4:] if len(recipient_id) >= 4 else '****'}, "
                         f"Reply-To: {reply_to_message_id}"
                     )
@@ -135,7 +156,7 @@ class WhatsAppService:
                             msg_record.acknowledged_at = datetime.now(timezone.utc)
                         await session.commit()
             except Exception as db_exc:
-                logger.error(f"Failed to update acknowledgment status in database: {db_exc}")
+                logger.error(f"Failed to update message status in database: {db_exc}")
 
         return success
 
