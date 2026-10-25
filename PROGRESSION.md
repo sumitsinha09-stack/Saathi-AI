@@ -9,7 +9,7 @@
 | Phase | Description | Status | Completion Date |
 | :--- | :--- | :--- | :--- |
 | **Phase 1** | **Environment and Project Initialization** | ✅ **Completed** | 2026-10-25 |
-| **Phase 2** | **WhatsApp Cloud API Webhook & Ingestion Pipeline** | ⏳ *Pending* | Upcoming |
+| **Phase 2** | **WhatsApp Webhook and Echo Bot** | ✅ **Completed** | 2026-10-25 |
 | **Phase 3** | **Audio Ingestion & Faster-Whisper Pipeline (Zero Retention)** | ⏳ *Pending* | Upcoming |
 | **Phase 4** | **Ollama (Qwen3) Structured Extraction & Credential Redaction** | ⏳ *Pending* | Upcoming |
 | **Phase 5** | **WhatsApp Interactive Review Gate (Confirm / Edit / Cancel)** | ⏳ *Pending* | Upcoming |
@@ -20,61 +20,64 @@
 
 ## 📝 Phase-by-Phase Detailed Changelog
 
+### Phase 2: WhatsApp Webhook and Echo Bot (Completed: 2026-10-25)
+
+#### 1. Architecture & Security Implementation
+- **Environment & Meta Graph API**:
+  - Configured supported Meta Graph API version **`v21.0`**.
+  - Added placeholders in `.env.example`, `backend/.env.example`, and `.env` for `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET`, and `WHATSAPP_API_VERSION`.
+- **GET Webhook Verification Handshake (`GET /webhook`)**:
+  - Validates `hub.mode == "subscribe"`.
+  - Performs timing-safe comparison via `hmac.compare_digest` with `WHATSAPP_VERIFY_TOKEN`.
+  - Responds with `hub.challenge` as plain text on success (200 OK), or 403 Forbidden on failure.
+- **POST Webhook Receiver (`POST /webhook`)**:
+  - Enforces `X-Hub-Signature-256` HMAC-SHA256 signature verification using `WHATSAPP_APP_SECRET`.
+  - Constant-time comparison rejects tampered or unverified requests without processing.
+  - Gracefully handles malformed JSON (HTTP 400).
+  - Ignores delivery/read receipts (`statuses`) without incoming messages.
+  - Returns HTTP 200 promptly to Meta within milliseconds.
+- **Idempotency & Database Deduplication**:
+  - Created `ProcessedMessage` SQLAlchemy model in [`backend/app/models.py`](file:///Users/sumitsinha/Documents/Saathi%20AI/backend/app/models.py) with `message_id` as primary key.
+  - Automatic table creation on application startup via `init_db()`.
+  - Validates incoming `wamid` against PostgreSQL; duplicate delivery retries from Meta are acknowledged with HTTP 200 but suppressed from generating repeat replies.
+- **Outbound Acknowledgment Dispatcher**:
+  - Created [`backend/app/services/whatsapp.py`](file:///Users/sumitsinha/Documents/Saathi%20AI/backend/app/services/whatsapp.py) using HTTPX.
+  - Sends contextual reply (`context.message_id`) to the sender:
+    > *"Thank you for contacting Samaran. We have received your message. Our system will help you prepare your cybercrime report in the next step."*
+  - Dispatches via FastAPI `BackgroundTasks` so Meta webhook handshake never blocks.
+  - Updates delivery status (`acknowledged` / `failed`) in PostgreSQL.
+  - Audio and voice notes acknowledged without downloading or transcribing in this phase.
+- **Automated Testing & Quality Assurance**:
+  - Built comprehensive test suite [`backend/tests/test_webhook.py`](file:///Users/sumitsinha/Documents/Saathi%20AI/backend/tests/test_webhook.py) with 12 test cases.
+  - Configured `pytest.ini` with isolated SQLite in-memory test database fixture.
+  - Verified 100% pass rate (`12 passed in 0.14s`).
+- **Live Local Server & Tunneling**:
+  - Tested live against local Uvicorn instance on port 8000 and Docker PostgreSQL on port 5433.
+  - Documented setup instructions for `ngrok` and `cloudflared` tunneling.
+
+---
+
 ### Phase 1: Environment & Project Initialization (Completed: 2026-10-25)
 
 #### 1. Environment & Tools Verification
-- **Python**: Installed Python 3.14.7 (`/opt/homebrew/opt/python@3.14/bin/python3.14`).
-- **Git**: Initialized Git repository; verified Git version 2.50.1.
-- **Docker & Docker Compose**: Configured and verified with Docker 29.8.0 and Docker Compose v5.5.1.
-- **Node.js & npm**: Verified Node `v24.15.0` and npm `11.12.1`.
-- **Ollama**: Installed Ollama `0.40.11` via Homebrew and registered as background service (`brew services start ollama`).
-
+- Python 3.14.7, Git 2.50.1, Docker 29.8.0, Docker Compose v5.5.1, Node.js v24.15.0, npm 11.12.1.
+- Installed Ollama `0.40.11` via Homebrew as a background service.
 #### 2. AI Model & Hardware Architecture
 - Analyzed Apple Silicon hardware profile: Apple M1 with 8.0 GB unified RAM.
-- **`qwen3:8b` (5.2 GB)**: Downloaded and verified with Metal GPU acceleration for deep reasoning.
-- **`qwen3:4b` (2.5 GB)**: Downloaded as recommended alternative to maintain optimal system responsiveness under multi-container loads.
-- Ollama verified and accessible via HTTP API at `http://127.0.0.1:11434/api/tags`.
-
+- `qwen3:8b` (5.2 GB) & `qwen3:4b` (2.5 GB) both downloaded and verified in Ollama with Metal GPU acceleration.
 #### 3. Containerized PostgreSQL Database
-- Created [`docker-compose.yml`](file:///Users/sumitsinha/Documents/Saathi%20AI/docker-compose.yml) running PostgreSQL 16 Alpine (`samaran-postgres`).
-- Configured persistent Docker volume `saathiai_postgres_data` for durable storage.
-- Healthcheck configured with `pg_isready` interval 5s.
-- **Port Conflict Mitigation**: Mapped container to host port `5433` (`5433:5432`) to coexist peacefully with an existing host PostgreSQL service on port `5432`.
-- Verified live database connection via async Python `psycopg`.
-
+- PostgreSQL 16 Alpine running in Docker on port 5433 with healthcheck and persistent volume `saathiai_postgres_data`.
 #### 4. Backend Architecture & Virtual Environment
-- Created Python virtual environment at [`backend/venv`](file:///Users/sumitsinha/Documents/Saathi%20AI/backend/venv) using Python 3.14.
-- Installed dependencies in [`backend/requirements.txt`](file:///Users/sumitsinha/Documents/Saathi%20AI/backend/requirements.txt):
-  - `fastapi` & `uvicorn[standard]`
-  - `sqlalchemy[asyncio]` & `greenlet`
-  - `psycopg[binary]`
-  - `httpx`
-  - `pydantic` & `pydantic-settings`
-  - `faster-whisper`
-  - `ollama` Python client
-  - `python-dotenv`
-
+- Created `backend/venv` with Python 3.14.
+- Installed `fastapi`, `uvicorn`, `sqlalchemy[asyncio]`, `greenlet`, `psycopg[binary]`, `httpx`, `pydantic`, `faster-whisper`, `ollama`.
 #### 5. FastAPI Core Application
-- Built [`backend/app/main.py`](file:///Users/sumitsinha/Documents/Saathi%20AI/backend/app/main.py) with lifespan management and CORS middleware.
-- **`GET /`**: Returns service name, environment, and status.
-- **`GET /health`**: Live health check querying both PostgreSQL (`SELECT 1`) and Ollama API.
-- **Swagger Documentation**: Active at `http://127.0.0.1:8000/docs`.
-
-#### 6. Security, Git, and Privacy Guardrails
-- Created [`.gitignore`](file:///Users/sumitsinha/Documents/Saathi%20AI/.gitignore) to exclude `.env`, `backend/venv/`, `__pycache__/`, and transient audio extensions (`*.ogg`, `*.wav`, `*.mp3`, `*.m4a`).
-- Verified zero credentials or tokens committed to Git.
-- Configured [`.env.example`](file:///Users/sumitsinha/Documents/Saathi%20AI/.env.example) and [`backend/.env.example`](file:///Users/sumitsinha/Documents/Saathi%20AI/backend/.env.example) with placeholder values.
-- Comprehensive setup and WhatsApp Cloud API guide documented in [`README.md`](file:///Users/sumitsinha/Documents/Saathi%20AI/README.md).
+- Built `main.py` with `/`, `/health`, and Swagger UI at `/docs`.
+#### 6. Security & Documentation
+- Clean `.gitignore` safeguarding secrets, caches, and media files.
 
 ---
 
 ## 🔮 Upcoming Phases & Roadmap
-
-### Phase 2: WhatsApp Cloud API Webhook & Ingestion Pipeline
-- Implement WhatsApp webhook verification endpoint (`GET /webhook` using `WHATSAPP_VERIFY_TOKEN`).
-- Implement event receiver endpoint (`POST /webhook`) to capture incoming user messages.
-- Parse message metadata (sender phone, timestamp, message type: text, audio/voice, interactive button reply).
-- Mock/test harness for simulating inbound WhatsApp payloads locally without ngrok.
 
 ### Phase 3: Audio Ingestion & Faster-Whisper Pipeline
 - Securely fetch audio files from Meta Media API (`graph.facebook.com/v21.0/{media-id}`).

@@ -6,50 +6,34 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from dotenv import load_dotenv
 import httpx
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import create_async_engine
 
-# Load environment configuration safely
-load_dotenv()
-
-APP_NAME = os.getenv("APP_NAME", "Saathi AI Cybercrime Reporting Assistant")
-APP_ENV = os.getenv("APP_ENV", "development")
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", 
-    "postgresql+psycopg://samaran_user:samaran_dev_pass_2026@127.0.0.1:5432/samaran"
-)
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:8b")
-
-# Initialize database engine (async psycopg)
-db_engine = None
-try:
-    db_engine = create_async_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
-except Exception:
-    db_engine = None
+from backend.app.config import settings
+from backend.app.database import engine, init_db
+from backend.app.routers.webhook import router as webhook_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup lifecycle
+    # Startup: ensure tables exist
+    await init_db()
     yield
-    # Shutdown lifecycle
-    if db_engine is not None:
-        await db_engine.dispose()
+    # Shutdown
+    if engine is not None:
+        await engine.dispose()
 
 
 app = FastAPI(
     title="Saathi AI (Samaran) API",
     description="Emergency WhatsApp voice-complaint reporting assistant for cyber-fraud victims in India.",
-    version="0.1.0",
+    version="0.2.0",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
 )
 
-# Enable CORS for future Next.js portal integration
+# Enable CORS for Next.js portal
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -58,6 +42,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Register routers
+app.include_router(webhook_router)
+
 
 @app.get("/", tags=["General"])
 async def root() -> Dict[str, Any]:
@@ -65,8 +52,8 @@ async def root() -> Dict[str, Any]:
     Root endpoint returning service identity and quick links.
     """
     return {
-        "name": APP_NAME,
-        "environment": APP_ENV,
+        "name": settings.APP_NAME,
+        "environment": settings.APP_ENV,
         "status": "operational",
         "documentation": "/docs",
         "health": "/health",
@@ -88,9 +75,9 @@ async def health_check() -> JSONResponse:
     is_healthy = True
 
     # 1. Check PostgreSQL Database connection
-    if db_engine:
+    if engine:
         try:
-            async with db_engine.connect() as conn:
+            async with engine.connect() as conn:
                 await conn.execute(text("SELECT 1"))
             service_status["database"] = "connected"
         except Exception:
@@ -103,7 +90,7 @@ async def health_check() -> JSONResponse:
     # 2. Check Ollama API accessibility
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
-            resp = await client.get(f"{OLLAMA_BASE_URL}/api/tags")
+            resp = await client.get(f"{settings.OLLAMA_BASE_URL}/api/tags")
             if resp.status_code == 200:
                 service_status["ollama"] = "available"
             else:
@@ -118,7 +105,7 @@ async def health_check() -> JSONResponse:
     payload = {
         "status": "healthy" if is_healthy else "degraded",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "configured_model": OLLAMA_MODEL,
+        "configured_model": settings.OLLAMA_MODEL,
         "services": service_status,
     }
 

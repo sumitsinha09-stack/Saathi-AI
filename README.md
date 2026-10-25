@@ -29,42 +29,38 @@ Saathi AI helps victims of financial cyber-fraud (UPI impersonation, phishing, f
 samaran/
 ├── backend/
 │   ├── app/
-│   │   ├── __init__.py
-│   │   └── main.py          # FastAPI application & health monitoring
-│   ├── venv/                # Isolated Python virtual environment
-│   ├── requirements.txt     # Backend dependencies
-│   └── .env.example         # Example backend configuration
-├── portal/                  # Next.js web portal (Phase 1 placeholder)
-├── .env                     # Local environment variables & secrets (git-ignored)
-├── .env.example             # Root configuration template
-├── .gitignore               # Secrets, caches, venv & audio protection
-├── docker-compose.yml       # PostgreSQL database service
-└── README.md                # System documentation & setup guide
+│   │   ├── __init__.py       # Package definition
+│   │   ├── config.py         # Pydantic configuration & env validation
+│   │   ├── database.py       # Async SQLAlchemy engine & session factory
+│   │   ├── models.py         # ProcessedMessage idempotency database model
+│   │   ├── main.py           # FastAPI app, CORS, lifespan, /, /health, /docs
+│   │   ├── routers/
+│   │   │   └── webhook.py    # GET & POST /webhook handlers with HMAC verification
+│   │   └── services/
+│   │       └── whatsapp.py   # Meta WhatsApp Cloud API client & echo acknowledgment
+│   ├── tests/
+│   │   ├── conftest.py       # Pytest fixtures & isolated test database
+│   │   └── test_webhook.py   # 12 automated unit & integration test cases
+│   ├── venv/                 # Python 3.14 virtual environment (git-ignored)
+│   ├── requirements.txt      # Backend dependencies
+│   └── .env.example          # Example backend configuration
+├── portal/                   # Next.js web portal (Phase 1 placeholder)
+├── .env                      # Local environment variables & secrets (git-ignored)
+├── .env.example              # Root configuration template
+├── .gitignore                # Secrets, caches, venv & audio protection
+├── docker-compose.yml        # PostgreSQL database service
+├── pytest.ini                # Pytest configuration
+├── PROGRESSION.md            # Comprehensive project roadmap & changelog
+└── README.md                 # System documentation & setup guide
 ```
 
 ---
 
-## Phase 1: Environment & Setup Guide
+## Phase 2: WhatsApp Webhook & Echo Bot Setup
 
-### 1. Prerequisites
+### 1. Configure Local Environment (`.env`)
 
-Ensure the following tools are installed on your macOS system:
-
-- **Python 3.10+**: Available via Homebrew (`brew install python@3.12` or Python 3.14/3.15).
-- **Docker & Docker Compose**: Installed via Docker Desktop (`/Applications/Docker.app`).
-- **Ollama**: Installed via Homebrew (`brew install ollama`).
-- **Node.js (v18+) & npm**: For future Next.js portal development.
-- **Git**: For source version control.
-
-### 2. Environment Configuration
-
-Copy the example environment file to create your active `.env`:
-
-```bash
-cp .env.example .env
-```
-
-Review `.env` to verify your PostgreSQL and Ollama configuration:
+Ensure your `.env` contains the required WhatsApp configuration:
 
 ```ini
 # PostgreSQL
@@ -72,142 +68,131 @@ POSTGRES_DB=samaran
 POSTGRES_USER=samaran_user
 POSTGRES_PASSWORD=samaran_dev_pass_2026
 POSTGRES_HOST=127.0.0.1
-POSTGRES_PORT=5432
-DATABASE_URL=postgresql+psycopg://samaran_user:samaran_dev_pass_2026@127.0.0.1:5432/samaran
+POSTGRES_PORT=5433
+DATABASE_URL=postgresql+psycopg://samaran_user:samaran_dev_pass_2026@127.0.0.1:5433/samaran
 
 # Ollama LLM
 OLLAMA_BASE_URL=http://127.0.0.1:11434
 OLLAMA_MODEL=qwen3:8b
+
+# WhatsApp Cloud API (Meta for Developers)
+WHATSAPP_VERIFY_TOKEN=your_custom_verify_token
+WHATSAPP_ACCESS_TOKEN=your_meta_access_token
+WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
+WHATSAPP_APP_SECRET=your_meta_app_secret
+WHATSAPP_API_VERSION=v21.0
 ```
 
-### 3. Launch PostgreSQL Database
+---
 
-Start the PostgreSQL 16 container with healthchecks:
+### 2. Expose Local Backend (Tunnel Setup)
+
+To allow Meta to deliver webhook events to your local machine (`http://127.0.0.1:8000`), choose one of the following public tunneling methods:
+
+#### Option A: ngrok (Recommended)
+1. Install ngrok via Homebrew:
+   ```bash
+   brew install ngrok/ngrok/ngrok
+   ```
+2. Authenticate (first time only):
+   ```bash
+   ngrok config add-authtoken <YOUR_NGROK_AUTHTOKEN>
+   ```
+3. Start the tunnel on port 8000:
+   ```bash
+   ngrok http 8000
+   ```
+4. Copy the public forwarding HTTPS URL (e.g. `https://abc12345.ngrok-free.app`).
+   Your webhook callback URL is:
+   ```text
+   https://abc12345.ngrok-free.app/webhook
+   ```
+
+#### Option B: Cloudflare Tunnel (Free, no account required for quick tunnels)
+1. Install cloudflared via Homebrew:
+   ```bash
+   brew install cloudflared
+   ```
+2. Start an ad-hoc tunnel:
+   ```bash
+   cloudflared tunnel --url http://127.0.0.1:8000
+   ```
+3. Copy the generated `*.trycloudflare.com` URL (e.g. `https://xyz.trycloudflare.com`).
+   Your webhook callback URL is:
+   ```text
+   https://xyz.trycloudflare.com/webhook
+   ```
+
+---
+
+### 3. Meta Developer Dashboard Setup
+
+Follow these exact steps to connect your WhatsApp sandbox to your local server:
+
+1. **Access Meta Developer Dashboard**:
+   - Go to [developers.facebook.com](https://developers.facebook.com/) and open your **Saathi-AI** app.
+2. **Retrieve App Secret**:
+   - Go to **App Settings** -> **Basic**.
+   - Under **App Secret**, click **Show** and copy the value into your `.env` as `WHATSAPP_APP_SECRET`.
+3. **Retrieve Phone Number ID & Access Token**:
+   - In the left sidebar, click **WhatsApp** -> **API Setup**.
+   - Copy the **Phone number ID** into `WHATSAPP_PHONE_NUMBER_ID`.
+   - Copy the temporary **Access token** into `WHATSAPP_ACCESS_TOKEN`.
+   - Under **To**, select **Manage phone number list** and add your personal WhatsApp number with `+91` country code. Verify via OTP.
+4. **Configure Webhook**:
+   - In the left sidebar, click **WhatsApp** -> **Configuration**.
+   - Under **Webhook**, click **Edit**.
+   - **Callback URL**: Enter `https://YOUR_PUBLIC_TUNNEL/webhook` (e.g., `https://abc.ngrok-free.app/webhook`).
+   - **Verify Token**: Enter the exact string configured in your `.env` (`WHATSAPP_VERIFY_TOKEN`).
+   - Click **Verify and Save**. Meta will execute a `GET /webhook` request. If tokens match, verification succeeds immediately.
+5. **Subscribe to Webhook Fields**:
+   - In the Webhook configuration table, locate **messages**.
+   - Click **Subscribe**. This instructs Meta to forward incoming text and voice notes to your `/webhook`.
+
+---
+
+### 4. Running the Application
 
 ```bash
+# 1. Start Docker Database
 docker compose up -d
-```
 
-Verify that the database is healthy:
-
-```bash
-docker ps -f "name=samaran-postgres"
-```
-
-### 4. Start Ollama and Download AI Model
-
-Start Ollama as a local background service:
-
-```bash
-brew services start ollama
-```
-
-Download the Qwen model:
-
-```bash
-# For standard systems:
-ollama pull qwen3:8b
-
-# For machines with 8 GB RAM (recommended to prevent memory pressure):
-ollama pull qwen3:4b
-```
-
-Verify that Ollama responds:
-
-```bash
-ollama run qwen3:8b "Respond with: Saathi AI LLM engine is ready."
-```
-
-### 5. Backend Setup & Virtual Environment
-
-Create and activate the Python virtual environment:
-
-```bash
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-cd ..
-```
-
-### 6. Run the FastAPI Application
-
-From the project root:
-
-```bash
+# 2. Activate Virtual Environment
 source backend/venv/bin/activate
+
+# 3. Start FastAPI Application
 uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 ---
 
-## Verification & Endpoints
+### 5. Automated Testing
 
-| Endpoint | Method | Purpose |
-| :--- | :--- | :--- |
-| `http://127.0.0.1:8000/` | `GET` | Service identity and status |
-| `http://127.0.0.1:8000/health` | `GET` | Live PostgreSQL and Ollama connectivity status |
-| `http://127.0.0.1:8000/docs` | `GET` | Interactive Swagger API documentation |
-| `http://127.0.0.1:8000/redoc` | `GET` | ReDoc API specifications |
+Run the full test suite (12 tests covering verification, HMAC validation, deduplication, voice message handling, and Meta error handling):
 
-Sample `/health` response:
-```json
-{
-  "status": "healthy",
-  "timestamp": "2026-10-25T10:45:00.000000Z",
-  "configured_model": "qwen3:8b",
-  "services": {
-    "backend": "healthy",
-    "database": "connected",
-    "ollama": "available"
-  }
-}
+```bash
+pytest
 ```
 
 ---
 
-## WhatsApp Cloud API Configuration Guide (Meta for Developers)
+### 6. Verification & Endpoints
 
-To integrate WhatsApp messaging in subsequent phases:
-
-### Step 1: Create a Meta Developer Account
-1. Visit [developers.facebook.com](https://developers.facebook.com/) and log in with your Facebook account.
-2. Complete developer registration if accessing for the first time.
-
-### Step 2: Create a Meta App
-1. Navigate to **My Apps** -> **Create App**.
-2. Select **Other** as the use case -> click **Next**.
-3. Select **Business** as the App Type -> click **Next**.
-4. Enter an App name (e.g. `Saathi-AI-Dev`), provide your email, and select your Business Portfolio (or leave default).
-
-### Step 3: Add the WhatsApp Product
-1. On the App Dashboard, locate **WhatsApp** in the list of products.
-2. Click **Set up**. This automatically creates a sandbox WhatsApp Business Account (WABA).
-
-### Step 4: Configure Test Phone Number & Authorized Recipients
-1. In the sidebar under **WhatsApp**, select **API Setup**.
-2. Meta provides a free **Test phone number** with pre-configured templates.
-3. In the **Send and receive messages** panel, find the **To** phone number dropdown.
-4. Select **Manage phone number list** and add your personal WhatsApp number (with India country code `+91`).
-5. Enter the verification code received on your phone via SMS/WhatsApp.
-
-### Step 5: Extract Credentials for `.env`
-Collect the following configuration values from Meta:
-- **`WHATSAPP_PHONE_NUMBER_ID`**: Displayed under *Phone number ID* on the API Setup page.
-- **`WHATSAPP_BUSINESS_ACCOUNT_ID`**: Displayed under *WhatsApp Business Account ID*.
-- **`WHATSAPP_ACCESS_TOKEN`**: Copy the 24-hour temporary access token for development, or generate a permanent token via *Meta Business Settings -> System Users*.
-- **`WHATSAPP_VERIFY_TOKEN`**: A custom secret token you define (e.g., `saathi_webhook_token_2026`) used to verify webhook handshakes in Phase 2.
-
-Add these values to your local `.env` file. Never commit `.env` to Git.
+| Endpoint | Method | Purpose |
+| :--- | :--- | :--- |
+| `http://127.0.0.1:8000/` | `GET` | Service identity and status |
+| `http://127.0.0.1:8000/health` | `GET` | PostgreSQL and Ollama connectivity status |
+| `http://127.0.0.1:8000/webhook` | `GET` | Meta Webhook Handshake verification |
+| `http://127.0.0.1:8000/webhook` | `POST` | Event receiver, HMAC-SHA256 signature check & echo loop |
+| `http://127.0.0.1:8000/docs` | `GET` | Interactive Swagger API documentation |
 
 ---
 
-## Troubleshooting
+### 7. Reliability & Deduplication Architecture
 
-- **PostgreSQL port 5432 already in use**:
-  If a local PostgreSQL instance is running on port 5432, change `POSTGRES_PORT=5433` in `.env` and `docker-compose.yml`.
-- **Ollama unreachable**:
-  Check if the Ollama daemon is running with `curl http://127.0.0.1:11434/`. If stopped, run `brew services restart ollama`.
-- **Docker daemon connection error**:
-  Ensure Docker Desktop is open (`open -a Docker`).
+- **PostgreSQL Idempotency Table (`processed_messages`)**:
+  Stores `message_id` as primary key. Concurrent duplicate webhook deliveries from Meta are caught and deduplicated before queuing any outbound replies.
+- **Asynchronous Execution**:
+  Webhooks respond with HTTP 200 within milliseconds to satisfy Meta's strict timeout (< 3 seconds), and outbound acknowledgments are dispatched via FastAPI `BackgroundTasks`.
+- **Note on Background Tasks**:
+  FastAPI `BackgroundTasks` run in-process. If the application server process terminates while a task is queued, that specific delivery may not complete. In future production hardening (Phase 6), Celery or Redis streams can be layered for distributed retries.
