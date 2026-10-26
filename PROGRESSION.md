@@ -13,14 +13,111 @@
 | **Phase 2.5** | **Voice Note Recording, Validation & Upload System** | ✅ **Completed** | 2026-10-26 |
 | **Phase 3** | **Local Voice Transcription (Faster-Whisper, Zero Retention)** | ✅ **Completed** | 2026-10-26 |
 | **Phase 3.5** | **Automatic Transcription & Optional English Translation** | ✅ **Completed** | 2026-10-26 |
-| **Phase 4** | **Ollama (Qwen3) Structured Extraction & Credential Redaction** | ⏳ *Pending* | Upcoming |
-| **Phase 5** | **WhatsApp Interactive Review Gate (Confirm / Edit / Cancel)** | ⏳ *Pending* | Upcoming |
+| **Phase 4** | **AI-Powered Complaint Extraction & Storage (Qwen3, Redaction)** | ✅ **Completed** | 2026-10-26 |
+| **Phase 5** | **Complaint Review, Editing, and Confirmation (`/c/[token]`)** | ✅ **Completed** | 2026-10-26 |
 | **Phase 6** | **Automated Relief Actions (Bank Dispute Email, PDF, 1930, FIR)** | ⏳ *Pending* | Upcoming |
 | **Phase 7** | **Next.js Portal & Live Status Timeline** | ⏳ *Pending* | Upcoming |
 
 ---
 
 ## 📝 Phase-by-Phase Detailed Changelog
+
+### Phase 5: Complaint Review, Editing, and Confirmation (Completed: 2026-10-26)
+
+#### 1. Mobile-Friendly Review Page (`/c/[token]`)
+- Created mobile-friendly review interface at `/c/[token]` with responsive CSS (`review.html`, `review.css`, `review.js`).
+- Dual-token resolution: supports looking up complaints via upload token, access token, or reference number (`SAI-XXXXXX`).
+- Displays 5 lifecycle states:
+  - **Processing**: Visual spinner with active pipeline step indicator (`Voice Note Received ➔ Local Transcription ➔ AI Incident Extraction`). Automatically polls status until ready.
+  - **Ready for Review (`awaiting_review`)**: Full interactive review form with Sections A, B, and C.
+  - **Confirmed**: Green confirmation badge, reference number, confirmation timestamp, and unlocked reporting action buttons.
+  - **Cancelled**: Cancellation advisory banner locking all further editing or reporting.
+  - **Failed**: Clear error feedback with recovery button to re-record or return home.
+
+#### 2. Complaint Information Display (Strict Order: A, B, C)
+- **Section A: Complaint Summary in English**:
+  - Displays concise English summary.
+  - Automatically translates non-English summaries into natural English using local pipeline (`TranslationService`) when needed.
+  - Distinguishes translated content with `🌐 AI-Translated English Summary` tag.
+- **Section B: Original Voice Transcript**:
+  - Displays original transcript in native spoken script (Devanagari for Hindi, Tamil script for Tamil, English in English).
+  - Language indicator badge with detected language name and speech icon.
+  - Original audio transcript remains completely untouched and independent when complaint fields are edited.
+- **Section C: Structured Complaint Fields**:
+  - Form controls for all 10 Incident schema fields (`incident_type`, `summary`, `description`, `reported_entity`, `incident_date`, `financial_loss`, `currency`, `phone_number`, `suspected_scam`, `evidence_description`).
+  - Clear `Missing information` badge beside fields where value is null or empty string.
+  - Real-time missing-field counter in the sidebar verification panel.
+
+#### 3. Editable Fields, Redaction & Validation
+- Interactive edit mode toggle (`✏️ Edit Fields`).
+- Custom input controls for text, multiline narratives, dates, numbers, currencies, and boolean/nullable scam flags.
+- Validates edits against backend Pydantic `ComplaintUpdateRequest` schema.
+- **Credential Protection**: Redacts sensitive information (`RedactionService.redact_text`) on all submitted field updates, replacing passwords, OTPs, ATM/UPI PINs, CVVs, and full payment cards with `[REDACTED]`.
+
+#### 4. Primary Actions (Confirm, Edit, Cancel)
+- **Confirm**:
+  - Validates and saves final submitted edits atomically.
+  - Transitions complaint status to `confirmed` with `confirmed_at` timestamp.
+  - Records status transition event in `ComplaintStatusHistory`.
+  - Idempotent: repeated confirm requests return confirmed state without creating duplicate history events.
+  - Unlocks reporting actions without executing them automatically.
+- **Edit**:
+  - Toggles field editability and preserves edits across inputs.
+  - Allows saving drafts via `PATCH /api/complaints/{token}`.
+- **Cancel**:
+  - Interactive modal dialog confirming user intent before proceeding.
+  - Transitions complaint status to `cancelled` with `cancelled_at` timestamp.
+  - Locks further editing and confirmation permanently.
+
+#### 5. Backend REST API Endpoints (`backend/app/routers/complaints.py`)
+- `GET /api/complaints/{token}`: Returns full review state, English summary, native transcript, structured fields, and missing fields list.
+- `PATCH /api/complaints/{token}`: Partial updates to editable complaint fields with Pydantic validation & sensitive credential redaction.
+- `POST /api/complaints/{token}/confirm`: Finalizes review and marks status as `confirmed`.
+- `POST /api/complaints/{token}/cancel`: Cancels complaint and records audit event.
+- `GET /api/complaints/{token}/history`: Retrieves audit status history trail.
+
+#### 6. Unlocked Reporting Actions
+- Pre-formats and generates instant local documents:
+  - **National Cybercrime Reporting Portal (1930) Brief**: Summary text pre-formatted for direct copy-paste into `cybercrime.gov.in`.
+  - **Bank Fraud & Dispute Letter**: Formal notice to bank manager demanding immediate account freeze and reversal under RBI guidelines.
+
+
+### Phase 4: AI-Powered Complaint Extraction and Storage (Completed: 2026-10-26)
+
+#### 1. Local Qwen3 Integration Through Ollama
+- Configured local inference via Ollama (`qwen3:4b` with automatic fallback to `qwen2.5:3b`).
+- Disabled thinking mode (`think: false`) and enforced `temperature: 0` for deterministic outputs.
+- Guaranteed 100% offline processing: zero audio or text sent to external APIs.
+- Transcription completion guard: complaints are generated only after speech-to-text finishes.
+
+#### 2. Pydantic Incident Model (`backend/app/schemas/incident.py`)
+- Strictly validated schema grounded in reported facts without assumptions:
+  - `incident_type`, `summary`, `description`, `language`, `reported_entity`, `incident_date`, `financial_loss`, `currency`, `phone_number`, `suspected_scam`, `evidence_description`, `is_fallback`, `extraction_method`.
+  - Type-coercion validators for numeric amounts (e.g. "10,000", "₹25,000") and boolean scam flags.
+
+#### 3. Sensitive Information Redaction (`backend/app/services/redaction_service.py`)
+- Comprehensive regex and heuristic engine sanitizing OTPs, ATM/UPI PINs, CVVs, passwords, full card numbers, and Aadhaar numbers.
+- Sanitizes transcripts before prompt construction, post-processes model outputs before database persistence or logging, and ensures fallback summaries are sanitized.
+- Supports Hindi, Tamil, and English dialect patterns.
+
+#### 4. JSON Validation and 3-Step Retry Pipeline (`backend/app/services/extraction_service.py`)
+- Dispatches structured extraction prompt with prompt-injection defense (treating transcript strictly as untrusted victim data).
+- Validates model output against Pydantic schema with up to 3 retry attempts including concise error feedback.
+- Deterministic fallback summary: if all attempts fail, extracts factual keywords and generates a safe summary with `is_fallback: true`.
+
+#### 5. Complaint Storage, Reference Numbers & Security (`backend/app/services/complaint_service.py`)
+- Unique reference number format `SAI-XXXXXX` generated under concurrent requests with uniqueness constraints and automatic collision retries.
+- Cryptographically random access tokens (`secrets.token_urlsafe(32)`) hashed with SHA-256 (`token_hash`) with 24-hour expiration.
+- Atomic database transactions creating complaint records and initial `ComplaintStatusHistory` audit events (`PENDING_REVIEW`).
+- Idempotency: prevents duplicate complaint creation for identical upload tokens.
+
+#### 6. API Endpoints & Frontend Review Interface
+- `GET /api/complaints/{reference_number}`: Authorized retrieval via Bearer token or query param.
+- `GET /api/complaints/{reference_number}/history`: Audit timeline retrieval.
+- `POST /api/complaints/{reference_number}/confirm`: Finalizes review and transitions status to `CONFIRMED`.
+- `POST /api/voice/{token}/extract`: On-demand manual re-extraction endpoint.
+- Frontend: Interactive Complaint Card displaying reference pill, status badge, metadata grid, summary/description narrative, copy button, and review confirmation banner.
+
 
 ### Phase 3.5: Automatic Transcription & Optional English Translation (Completed: 2026-10-26)
 

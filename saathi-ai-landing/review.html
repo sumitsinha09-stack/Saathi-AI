@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Review & Confirm Complaint — Saathi AI</title>
+  <meta name="description" content="Review, edit, and confirm your AI-extracted cyber-fraud complaint. Verify structured facts, original transcripts, and ensure accurate reporting.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/review.css">
+</head>
+<body class="review-body">
+  <!-- Minimal Top Navigation Bar -->
+  <header class="review-header">
+    <div class="review-container nav-flex">
+      <a href="/" class="brand-logo" id="home-link">
+        <span class="logo-shield">🛡️</span>
+        <div class="brand-text">
+          <span class="brand-name">Saathi AI</span>
+          <span class="brand-tagline">Review & Incident Verification</span>
+        </div>
+      </a>
+      <div class="header-badges">
+        <span class="security-badge" title="Zero cloud storage. 100% local processing.">
+          🔒 Local & End-to-End Private
+        </span>
+        <a href="/" class="btn-back-home" id="btn-back-home">← Back to Voice Studio</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Review Workflow Container -->
+  <main class="review-main">
+    <div class="review-container">
+
+      <!-- Breadcrumbs & Token Banner -->
+      <div class="review-meta-bar">
+        <div class="meta-left">
+          <span class="meta-label">Complaint Reference:</span>
+          <strong class="ref-code" id="display-ref-number">Loading...</strong>
+          <span class="status-pill status-awaiting" id="display-status-pill">Checking Status</span>
+        </div>
+        <div class="meta-right">
+          <span class="timestamp-label" id="display-timestamp"></span>
+        </div>
+      </div>
+
+      <!-- Alert / Notification Banner -->
+      <div class="alert-banner" id="global-alert-banner" style="display: none;">
+        <span class="alert-icon" id="global-alert-icon">ℹ️</span>
+        <div class="alert-content" id="global-alert-msg">Notification message.</div>
+        <button type="button" class="btn-close-alert" id="btn-close-alert">✕</button>
+      </div>
+
+      <!-- STATE 1: PROCESSING STATE -->
+      <section class="state-card state-processing" id="card-processing" style="display: none;">
+        <div class="processing-spinner-box">
+          <div class="saathi-spinner"></div>
+        </div>
+        <h2 class="state-title" id="proc-title">Processing Your Voice Complaint...</h2>
+        <p class="state-desc" id="proc-desc">
+          Transcribing voice note with Faster-Whisper, translating non-English speech, and structuring key cybercrime facts with local Qwen3.
+        </p>
+        <div class="progress-steps-list">
+          <div class="proc-step active" id="pstep-upload">
+            <span class="pstep-icon">✓</span>
+            <span class="pstep-text">Voice Note Received</span>
+          </div>
+          <div class="proc-step" id="pstep-transcribe">
+            <span class="pstep-icon">⚡</span>
+            <span class="pstep-text">Local Transcription (Faster-Whisper)</span>
+          </div>
+          <div class="proc-step" id="pstep-extract">
+            <span class="pstep-icon">🤖</span>
+            <span class="pstep-text">AI Incident Extraction & Redaction</span>
+          </div>
+        </div>
+        <div class="polling-indicator">
+          <span class="pulse-dot"></span> Checking status automatically...
+        </div>
+      </section>
+
+      <!-- STATE 2: FAILED STATE -->
+      <section class="state-card state-failed" id="card-failed" style="display: none;">
+        <div class="state-icon-circle failed">⚠️</div>
+        <h2 class="state-title">Complaint Generation Failed</h2>
+        <p class="state-desc" id="failed-error-msg">
+          We encountered an issue while processing your voice note. The audio might be silent, unclear, or corrupted.
+        </p>
+        <div class="failed-actions">
+          <a href="/#voice-studio" class="btn-primary-action">🎙️ Record a New Voice Note</a>
+          <a href="/" class="btn-secondary-action">Go to Home Page</a>
+        </div>
+      </section>
+
+      <!-- STATE 3: CANCELLED STATE -->
+      <section class="state-card state-cancelled" id="card-cancelled" style="display: none;">
+        <div class="state-icon-circle cancelled">🛑</div>
+        <h2 class="state-title">Complaint Cancelled</h2>
+        <p class="state-desc">
+          This complaint has been cancelled and closed. No dispute actions will be taken, and further edits or confirmations are locked.
+        </p>
+        <div class="cancelled-details-box">
+          <p><strong>Reference:</strong> <span id="cancelled-ref"></span></p>
+          <p><strong>Cancelled At:</strong> <span id="cancelled-timestamp"></span></p>
+        </div>
+        <div class="cancelled-actions">
+          <a href="/#voice-studio" class="btn-primary-action">Start a New Complaint</a>
+          <a href="/" class="btn-secondary-action">Back to Home</a>
+        </div>
+      </section>
+
+      <!-- STATE 4: CONFIRMED STATE BANNER (Shown above review when confirmed) -->
+      <section class="confirmed-banner" id="banner-confirmed" style="display: none;">
+        <div class="confirmed-badge-row">
+          <div class="confirmed-icon">✅</div>
+          <div>
+            <h2 class="confirmed-title">Complaint Confirmed by Victim</h2>
+            <p class="confirmed-desc">
+              Your incident details have been finalized and verified. Formal reporting actions are now unlocked below.
+              <em>(Note: Your complaint has not been submitted externally. You control when and where to send it.)</em>
+            </p>
+          </div>
+        </div>
+
+        <div class="unlocked-actions-grid">
+          <div class="action-card">
+            <div class="action-header">
+              <span class="action-icon">📄</span>
+              <strong>National Cybercrime Portal (1930)</strong>
+            </div>
+            <p class="action-subtext">Download pre-formatted dispute narrative and evidence sheet ready for cybercrime.gov.in.</p>
+            <button type="button" class="btn-unlocked-action" id="btn-download-1930">
+              📥 Download 1930 Filing Summary
+            </button>
+          </div>
+
+          <div class="action-card">
+            <div class="action-header">
+              <span class="action-icon">🏦</span>
+              <strong>Bank Fraud & Dispute Letter</strong>
+            </div>
+            <p class="action-subtext">Generate formal notice to your bank manager demanding immediate account freeze under RBI guidelines.</p>
+            <button type="button" class="btn-unlocked-action" id="btn-download-bank-letter">
+              ✉️ Generate Bank Dispute Notice
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- STATE 5: READY FOR REVIEW / EDIT / CONFIRM FORM -->
+      <div class="review-content-layout" id="review-content" style="display: none;">
+
+        <!-- Left Column: Primary Sections (A, B, C) -->
+        <div class="review-primary-col">
+
+          <!-- SECTION A: Complaint Summary in English -->
+          <div class="review-section-card" id="sec-english-summary">
+            <div class="section-card-header">
+              <div class="title-with-badge">
+                <span class="section-num-badge">A</span>
+                <h3 class="section-title">Complaint Summary in English</h3>
+              </div>
+              <span class="translation-tag" id="summary-translation-badge">
+                🌐 AI-Translated English Summary
+              </span>
+            </div>
+            <div class="summary-body">
+              <p class="summary-text" id="display-english-summary">
+                Loading English summary...
+              </p>
+            </div>
+          </div>
+
+          <!-- SECTION B: Original Voice Transcript -->
+          <div class="review-section-card" id="sec-original-transcript">
+            <div class="section-card-header">
+              <div class="title-with-badge">
+                <span class="section-num-badge">B</span>
+                <h3 class="section-title">Original Voice Transcript</h3>
+              </div>
+              <span class="lang-pill" id="display-language-pill">
+                🗣️ Detected: <strong id="detected-lang-name">Hindi</strong>
+              </span>
+            </div>
+            <div class="transcript-body">
+              <blockquote class="native-transcript-quote" id="display-original-transcript">
+                Loading original spoken audio transcript...
+              </blockquote>
+              <div class="transcript-footer">
+                <small class="transcript-notice">
+                  🔒 The original audio transcript is preserved verbatim in its spoken script (Devanagari, Tamil, or English) and remains untouched when editing fields.
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION C: Structured Complaint Fields -->
+          <div class="review-section-card" id="sec-structured-fields">
+            <div class="section-card-header">
+              <div class="title-with-badge">
+                <span class="section-num-badge">C</span>
+                <h3 class="section-title">Structured Complaint Fields</h3>
+              </div>
+              <div class="edit-mode-toggle">
+                <button type="button" class="btn-toggle-edit" id="btn-toggle-edit">
+                  ✏️ Edit Fields
+                </button>
+              </div>
+            </div>
+
+            <!-- Redaction Protection Advisory -->
+            <div class="redaction-advisory">
+              <span class="advisory-icon">🛡️</span>
+              <div class="advisory-text">
+                <strong>Credential Privacy Protection:</strong> All edits are automatically checked by local redaction.
+                Never enter actual passwords, OTPs, ATM/UPI PINs, CVVs, or full payment-card numbers.
+              </div>
+            </div>
+
+            <form id="complaint-edit-form" novalidate>
+
+              <!-- Incident Type -->
+              <div class="form-row">
+                <div class="form-group full-width">
+                  <div class="field-label-row">
+                    <label for="field-incident-type">Incident Category</label>
+                    <span class="missing-badge" id="badge-incident-type" style="display: none;">Missing information</span>
+                  </div>
+                  <select id="field-incident-type" name="incident_type" class="form-input" disabled>
+                    <option value="">Select or leave unassigned</option>
+                    <option value="Unauthorized Debit / UPI Fraud">Unauthorized Debit / UPI Fraud</option>
+                    <option value="Electricity Bill Disconnection Scam">Electricity Bill Disconnection Scam</option>
+                    <option value="KYC / SIM Block Phishing Scam">KYC / SIM Block Phishing Scam</option>
+                    <option value="Job / Part-time Task Scam">Job / Part-time Task Scam</option>
+                    <option value="Lottery / Prize / Gift Card Scam">Lottery / Prize / Gift Card Scam</option>
+                    <option value="Customs / Courier Parcel Scam">Customs / Courier Parcel Scam</option>
+                    <option value="Loan App Harassment Scam">Loan App Harassment Scam</option>
+                    <option value="Impersonation / Police Threat Scam">Impersonation / Police Threat Scam</option>
+                    <option value="Other Cyber Financial Fraud">Other Cyber Financial Fraud</option>
+                  </select>
+                  <span class="field-error" id="err-incident-type"></span>
+                </div>
+              </div>
+
+              <!-- Summary -->
+              <div class="form-row">
+                <div class="form-group full-width">
+                  <div class="field-label-row">
+                    <label for="field-summary">Complaint Summary <span class="req-star">*</span></label>
+                    <span class="missing-badge" id="badge-summary" style="display: none;">Missing information</span>
+                  </div>
+                  <input type="text" id="field-summary" name="summary" class="form-input" placeholder="Concise statement of what happened" disabled required minlength="3" maxlength="500">
+                  <span class="field-error" id="err-summary"></span>
+                </div>
+              </div>
+
+              <!-- Description -->
+              <div class="form-row">
+                <div class="form-group full-width">
+                  <div class="field-label-row">
+                    <label for="field-description">Detailed Factual Description <span class="req-star">*</span></label>
+                    <span class="missing-badge" id="badge-description" style="display: none;">Missing information</span>
+                  </div>
+                  <textarea id="field-description" name="description" class="form-input textarea-field" rows="4" placeholder="Chronological narrative of the incident" disabled required minlength="5"></textarea>
+                  <span class="field-error" id="err-description"></span>
+                </div>
+              </div>
+
+              <!-- Reported Entity & Incident Date -->
+              <div class="form-row two-cols">
+                <div class="form-group">
+                  <div class="field-label-row">
+                    <label for="field-reported-entity">Reported Entity / Bank / Company</label>
+                    <span class="missing-badge" id="badge-reported-entity" style="display: none;">Missing information</span>
+                  </div>
+                  <input type="text" id="field-reported-entity" name="reported_entity" class="form-input" placeholder="e.g. State Bank of India, BESCOM, Telegram" disabled maxlength="128">
+                  <span class="field-error" id="err-reported-entity"></span>
+                </div>
+
+                <div class="form-group">
+                  <div class="field-label-row">
+                    <label for="field-incident-date">Incident Date / Time</label>
+                    <span class="missing-badge" id="badge-incident-date" style="display: none;">Missing information</span>
+                  </div>
+                  <input type="text" id="field-incident-date" name="incident_date" class="form-input" placeholder="e.g. 26 Oct 2026, yesterday morning" disabled maxlength="64">
+                  <span class="field-error" id="err-incident-date"></span>
+                </div>
+              </div>
+
+              <!-- Financial Loss & Currency -->
+              <div class="form-row two-cols">
+                <div class="form-group">
+                  <div class="field-label-row">
+                    <label for="field-financial-loss">Financial Loss Amount</label>
+                    <span class="missing-badge" id="badge-financial-loss" style="display: none;">Missing information</span>
+                  </div>
+                  <div class="input-currency-wrapper">
+                    <input type="number" step="0.01" min="0" id="field-financial-loss" name="financial_loss" class="form-input" placeholder="0.00" disabled>
+                  </div>
+                  <span class="field-error" id="err-financial-loss"></span>
+                </div>
+
+                <div class="form-group">
+                  <div class="field-label-row">
+                    <label for="field-currency">Currency</label>
+                    <span class="missing-badge" id="badge-currency" style="display: none;">Missing information</span>
+                  </div>
+                  <select id="field-currency" name="currency" class="form-input" disabled>
+                    <option value="INR">INR (₹)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="AED">AED (د.إ)</option>
+                  </select>
+                  <span class="field-error" id="err-currency"></span>
+                </div>
+              </div>
+
+              <!-- Phone Number & Suspected Scam -->
+              <div class="form-row two-cols">
+                <div class="form-group">
+                  <div class="field-label-row">
+                    <label for="field-phone-number">Suspect Contact / Phone Number</label>
+                    <span class="missing-badge" id="badge-phone-number" style="display: none;">Missing information</span>
+                  </div>
+                  <input type="text" id="field-phone-number" name="phone_number" class="form-input" placeholder="e.g. +91 9876543210" disabled maxlength="32">
+                  <span class="field-error" id="err-phone-number"></span>
+                </div>
+
+                <div class="form-group">
+                  <div class="field-label-row">
+                    <label for="field-suspected-scam">Suspected Cyber Scam?</label>
+                    <span class="missing-badge" id="badge-suspected-scam" style="display: none;">Missing information</span>
+                  </div>
+                  <select id="field-suspected-scam" name="suspected_scam" class="form-input" disabled>
+                    <option value="">Unknown / Not Determined</option>
+                    <option value="true">Yes — Fraud / Cybercrime Scam</option>
+                    <option value="false">No — Normal Service Dispute</option>
+                  </select>
+                  <span class="field-error" id="err-suspected-scam"></span>
+                </div>
+              </div>
+
+              <!-- Evidence Description -->
+              <div class="form-row">
+                <div class="form-group full-width">
+                  <div class="field-label-row">
+                    <label for="field-evidence-description">Evidence & Transaction References</label>
+                    <span class="missing-badge" id="badge-evidence-description" style="display: none;">Missing information</span>
+                  </div>
+                  <textarea id="field-evidence-description" name="evidence_description" class="form-input textarea-field" rows="2" placeholder="UPI Reference IDs, SMS screenshots, bank statement details" disabled></textarea>
+                  <span class="field-error" id="err-evidence-description"></span>
+                </div>
+              </div>
+
+              <!-- Save Changes Button (Visible during Edit Mode) -->
+              <div class="edit-save-bar" id="edit-save-bar" style="display: none;">
+                <button type="button" class="btn-save-draft" id="btn-save-draft">
+                  💾 Save Edits
+                </button>
+                <button type="button" class="btn-cancel-edit" id="btn-cancel-edit">
+                  Cancel Editing
+                </button>
+                <span class="save-status-msg" id="save-status-msg"></span>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Right Column: Actions & Workflow Panel -->
+        <aside class="review-sidebar-col">
+          <div class="sidebar-action-card">
+            <h4 class="sidebar-title">Victim Verification</h4>
+            <p class="sidebar-desc">
+              Please review each field carefully. Confirming marks the complaint as verified and unlocks reporting notices.
+            </p>
+
+            <div class="missing-summary-box" id="missing-summary-box">
+              <div class="missing-count-row">
+                <span class="missing-count-badge" id="missing-count-badge">0</span>
+                <span>Unpopulated Fields</span>
+              </div>
+              <p class="missing-help-text">You may fill in missing information or leave it unstated if unknown.</p>
+            </div>
+
+            <!-- Primary Action Buttons -->
+            <div class="primary-actions-stack">
+              <!-- CONFIRM BUTTON -->
+              <button type="button" class="btn-confirm-action" id="btn-confirm-primary">
+                <span class="btn-icon">✅</span>
+                <div class="btn-text-block">
+                  <strong>Confirm Complaint</strong>
+                  <small>Lock verified facts & unlock reporting</small>
+                </div>
+              </button>
+
+              <!-- EDIT BUTTON -->
+              <button type="button" class="btn-edit-action" id="btn-edit-primary">
+                <span class="btn-icon">✏️</span>
+                <div class="btn-text-block">
+                  <strong>Edit Information</strong>
+                  <small>Modify values or add missing details</small>
+                </div>
+              </button>
+
+              <!-- CANCEL BUTTON -->
+              <button type="button" class="btn-cancel-action" id="btn-cancel-primary">
+                <span class="btn-icon">🛑</span>
+                <div class="btn-text-block">
+                  <strong>Cancel Complaint</strong>
+                  <small>Permanently cancel this filing</small>
+                </div>
+              </button>
+            </div>
+
+            <!-- Privacy Guarantee Footer -->
+            <div class="sidebar-footer-note">
+              🔒 <strong>Safe & Independent:</strong> Confirmation only authorizes your dispute documents. Saathi AI never submits your complaint anywhere without your explicit manual action.
+            </div>
+          </div>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL: Cancel Confirmation Dialog -->
+  <div class="modal-backdrop" id="modal-cancel" style="display: none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-icon">⚠️</span>
+        <h3 class="modal-title">Confirm Complaint Cancellation</h3>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to cancel this complaint?</p>
+        <p class="modal-subtext">
+          Once cancelled, all editing and confirmation workflows will be closed. This action cannot be reversed.
+        </p>
+        <div class="form-group" style="margin-top: 14px;">
+          <label for="cancel-reason-input">Reason for cancellation (optional):</label>
+          <input type="text" id="cancel-reason-input" class="form-input" placeholder="e.g. Issue resolved with bank, recorded in error">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-cancel" id="btn-dismiss-modal">Keep Complaint</button>
+        <button type="button" class="btn-modal-danger" id="btn-confirm-cancel-dialog">Yes, Cancel Complaint</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/review.js"></script>
+</body>
+</html>

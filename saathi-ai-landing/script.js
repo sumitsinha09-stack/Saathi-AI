@@ -162,6 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const stepUploading = document.getElementById('step-uploading');
   const stepReceived = document.getElementById('step-received');
   const stepTranscribing = document.getElementById('step-transcribing');
+  const stepExtracting = document.getElementById('step-extracting');
   const stepCompleted = document.getElementById('step-completed');
 
   // Transcript Elements
@@ -190,11 +191,35 @@ document.addEventListener('DOMContentLoaded', () => {
   const retranslateIcon = document.getElementById('retranslate-icon');
   const retranslateText = document.getElementById('retranslate-text');
 
+  // Phase 4 Complaint Elements
+  const complaintCard = document.getElementById('complaint-card');
+  const complaintRefBadge = document.getElementById('complaint-ref-badge');
+  const btnCopyRef = document.getElementById('btn-copy-ref');
+  const complaintStatusPill = document.getElementById('complaint-status-pill');
+  const complaintFallbackAlert = document.getElementById('complaint-fallback-alert');
+  const complaintType = document.getElementById('complaint-type');
+  const complaintEntity = document.getElementById('complaint-entity');
+  const complaintLoss = document.getElementById('complaint-loss');
+  const complaintScam = document.getElementById('complaint-scam');
+  const complaintDate = document.getElementById('complaint-date');
+  const complaintPhone = document.getElementById('complaint-phone');
+  const complaintSummary = document.getElementById('complaint-summary');
+  const complaintDescription = document.getElementById('complaint-description');
+  const complaintEvidenceBlock = document.getElementById('complaint-evidence-block');
+  const complaintEvidence = document.getElementById('complaint-evidence');
+  const complaintHistoryList = document.getElementById('complaint-history-list');
+  const btnConfirmComplaint = document.getElementById('btn-confirm-complaint');
+  const btnReextractComplaint = document.getElementById('btn-reextract-complaint');
+  const btnOpenReview = document.getElementById('btn-open-review');
+  const complaintConfirmedBanner = document.getElementById('complaint-confirmed-banner');
+
   // Active Job State
   let currentJobToken = null;
   let currentDetectedLanguage = null;
   let currentTranscript = null;
   let currentTranslation = null;
+  let currentComplaint = null;
+  let currentComplaintAccessToken = null;
   let isTranslationHidden = false;
 
   // Language flag mapping
@@ -839,7 +864,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Stepper State Controller
   // -------------------------------------------------------------------------
   function setStepperState(state) {
-    const steps = [stepUploading, stepReceived, stepTranscribing, stepCompleted];
+    const steps = [stepUploading, stepReceived, stepTranscribing, stepExtracting, stepCompleted];
     steps.forEach(s => {
       if (s) s.classList.remove('active', 'completed', 'failed');
     });
@@ -853,10 +878,16 @@ document.addEventListener('DOMContentLoaded', () => {
       if (stepUploading) stepUploading.classList.add('completed');
       if (stepReceived) stepReceived.classList.add('completed');
       if (stepTranscribing) stepTranscribing.classList.add('active');
+    } else if (state === 'extracting') {
+      if (stepUploading) stepUploading.classList.add('completed');
+      if (stepReceived) stepReceived.classList.add('completed');
+      if (stepTranscribing) stepTranscribing.classList.add('completed');
+      if (stepExtracting) stepExtracting.classList.add('active');
     } else if (state === 'completed') {
       if (stepUploading) stepUploading.classList.add('completed');
       if (stepReceived) stepReceived.classList.add('completed');
       if (stepTranscribing) stepTranscribing.classList.add('completed');
+      if (stepExtracting) stepExtracting.classList.add('completed');
       if (stepCompleted) stepCompleted.classList.add('completed');
     } else if (state === 'failed') {
       if (stepUploading) stepUploading.classList.add('failed');
@@ -892,12 +923,6 @@ document.addEventListener('DOMContentLoaded', () => {
             pipelineStatusBadge.textContent = 'Transcribing';
             pipelineMessage.innerHTML = '⚡ <strong>Transcribing audio locally...</strong> Faster-Whisper running on backend. Preserving original spoken dialect.';
           } else if (currentStatus === 'completed') {
-            clearInterval(pollingInterval);
-            pollingInterval = null;
-            setStepperState('completed');
-            pipelineStatusBadge.textContent = 'Completed';
-            pipelineMessage.innerHTML = `✅ <strong>Transcription Completed!</strong> Spoken language detected and preserved. Temporary audio file purged.`;
-
             currentJobToken = token;
             currentTranscript = data.transcript;
             currentDetectedLanguage = data.language;
@@ -912,9 +937,8 @@ document.addEventListener('DOMContentLoaded', () => {
               if (detectedLangFlag) detectedLangFlag.textContent = flag;
               if (detectedLanguageText) detectedLanguageText.textContent = `${langName}${conf}`;
               transcriptCard.style.display = 'block';
-              transcriptCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-              // Handle English detection: if speech is already English, notify user
+              // Handle English detection
               const isEnglish = (data.language === 'en');
               if (alreadyEnglishNotice) {
                 alreadyEnglishNotice.style.display = isEnglish ? 'inline-flex' : 'none';
@@ -928,15 +952,28 @@ document.addEventListener('DOMContentLoaded', () => {
               // If translation was already generated/cached, render it directly
               if (data.english_translation) {
                 renderTranslation(data.english_translation, isEnglish);
-              } else if (translationCard) {
-                translationCard.style.display = 'none';
               }
             }
 
-            showAlert('Audio transcribed locally in original language without external leaks!', 'success');
-            btnResetStudio.style.display = 'inline-flex';
-            if (btnRetryJob) btnRetryJob.style.display = 'none';
-            return;
+            // Phase 4: Handle Complaint Extraction
+            if (data.complaint) {
+              clearInterval(pollingInterval);
+              pollingInterval = null;
+              setStepperState('completed');
+              pipelineStatusBadge.textContent = 'Complaint Ready';
+              pipelineMessage.innerHTML = `✅ <strong>Complaint Generated!</strong> Reference: <code>${data.complaint_reference}</code>. All sensitive credentials sanitized.`;
+
+              renderComplaint(data.complaint, data.complaint_access_token);
+              showAlert('Complaint extracted and recorded successfully!', 'success');
+              btnResetStudio.style.display = 'inline-flex';
+              if (btnRetryJob) btnRetryJob.style.display = 'none';
+              return;
+            } else {
+              // Complaint extraction in progress in background
+              setStepperState('extracting');
+              pipelineStatusBadge.textContent = 'Extracting Complaint';
+              pipelineMessage.innerHTML = '⚡ <strong>Structuring incident facts with local Qwen3...</strong> Sanitizing credentials and formatting complaint.';
+            }
           } else if (currentStatus === 'failed') {
             clearInterval(pollingInterval);
             pollingInterval = null;
@@ -954,10 +991,188 @@ document.addEventListener('DOMContentLoaded', () => {
         pollingInterval = null;
         setStepperState('failed');
         pipelineStatusBadge.textContent = 'Timeout';
-        pipelineMessage.innerHTML = `⚠️ Transcription timed out after 90 seconds. Please retry with a shorter audio note.`;
+        pipelineMessage.innerHTML = `⚠️ Processing timed out. Please retry with a shorter audio note.`;
         btnResetStudio.style.display = 'inline-flex';
         if (btnRetryJob) btnRetryJob.style.display = 'inline-flex';
       }
+    }, 1500);
+  }
+
+  // -------------------------------------------------------------------------
+  // Phase 4: Complaint Rendering & Actions
+  // -------------------------------------------------------------------------
+  function renderComplaint(complaint, accessToken) {
+    if (!complaintCard || !complaint) return;
+
+    currentComplaint = complaint;
+    if (accessToken) {
+      currentComplaintAccessToken = accessToken;
+      try {
+        localStorage.setItem(`saathi_token_${complaint.reference_number}`, accessToken);
+      } catch (e) {}
+    }
+
+    // Reference number and badge
+    if (complaintRefBadge) {
+      complaintRefBadge.textContent = `Ref: ${complaint.reference_number || 'SAI-XXXXXX'}`;
+    }
+
+    if (btnOpenReview) {
+      const reviewToken = accessToken || currentJobToken || complaint.reference_number;
+      btnOpenReview.href = `/c/${encodeURIComponent(reviewToken)}`;
+    }
+
+    // Status pill
+    if (complaintStatusPill) {
+      const isConfirmed = complaint.status === 'CONFIRMED';
+      complaintStatusPill.textContent = complaint.status || 'PENDING REVIEW';
+      complaintStatusPill.className = `complaint-status-pill ${isConfirmed ? 'confirmed' : ''}`;
+    }
+
+    // Fallback banner
+    if (complaintFallbackAlert) {
+      complaintFallbackAlert.style.display = complaint.is_fallback ? 'flex' : 'none';
+    }
+
+    // Fields
+    if (complaintType) complaintType.textContent = complaint.incident_type || 'Unspecified Incident';
+    if (complaintEntity) complaintEntity.textContent = complaint.reported_entity || 'Not Mentioned';
+
+    if (complaintLoss) {
+      if (complaint.financial_loss != null) {
+        const curr = complaint.currency || 'INR';
+        const formattedAmount = Number(complaint.financial_loss).toLocaleString('en-IN');
+        complaintLoss.textContent = `₹${formattedAmount} ${curr}`;
+      } else {
+        complaintLoss.textContent = 'None reported';
+      }
+    }
+
+    if (complaintScam) {
+      if (complaint.suspected_scam === true) {
+        complaintScam.textContent = '⚠️ Yes (Suspected Scam)';
+        complaintScam.style.color = '#b91c1c';
+      } else if (complaint.suspected_scam === false) {
+        complaintScam.textContent = 'No';
+        complaintScam.style.color = '#15803d';
+      } else {
+        complaintScam.textContent = 'Uncertain / Not stated';
+        complaintScam.style.color = 'inherit';
+      }
+    }
+
+    if (complaintDate) complaintDate.textContent = complaint.incident_date || 'Not stated';
+    if (complaintPhone) complaintPhone.textContent = complaint.phone_number || 'None provided';
+    if (complaintSummary) complaintSummary.textContent = complaint.summary || '—';
+    if (complaintDescription) complaintDescription.textContent = complaint.description || '—';
+
+    // Evidence
+    if (complaintEvidenceBlock && complaintEvidence) {
+      if (complaint.evidence_description) {
+        complaintEvidence.textContent = complaint.evidence_description;
+        complaintEvidenceBlock.style.display = 'block';
+      } else {
+        complaintEvidenceBlock.style.display = 'none';
+      }
+    }
+
+    // Render initial history event
+    if (complaintHistoryList) {
+      const createdStr = complaint.created_at ? new Date(complaint.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Now';
+      complaintHistoryList.innerHTML = `
+        <div class="complaint-history-item">
+          <span><strong>${complaint.status || 'PENDING_REVIEW'}</strong> — Complaint recorded from voice note</span>
+          <span style="font-size: 0.8rem; color: #64748b;">${createdStr}</span>
+        </div>
+      `;
+    }
+
+    // Reset button states
+    if (btnConfirmComplaint) {
+      btnConfirmComplaint.disabled = (complaint.status === 'CONFIRMED');
+      btnConfirmComplaint.innerHTML = complaint.status === 'CONFIRMED'
+        ? '<span>✅ Complaint Confirmed</span>'
+        : '<span>✅ Confirm & Submit Complaint</span>';
+    }
+
+    if (complaintConfirmedBanner) {
+      complaintConfirmedBanner.style.display = (complaint.status === 'CONFIRMED') ? 'flex' : 'none';
+    }
+
+    complaintCard.style.display = 'block';
+    complaintCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // Copy Reference Number
+  if (btnCopyRef) {
+    btnCopyRef.addEventListener('click', () => {
+      if (!currentComplaint || !currentComplaint.reference_number) return;
+      navigator.clipboard.writeText(currentComplaint.reference_number).then(() => {
+        const orig = btnCopyRef.textContent;
+        btnCopyRef.textContent = '✓';
+        setTimeout(() => (btnCopyRef.textContent = orig), 1500);
+      });
+    });
+  }
+
+  // Confirm Complaint
+  if (btnConfirmComplaint) {
+    btnConfirmComplaint.addEventListener('click', async () => {
+      if (!currentComplaint || !currentComplaint.reference_number) return;
+      btnConfirmComplaint.disabled = true;
+      btnConfirmComplaint.innerHTML = '<span>⏳ Confirming...</span>';
+
+      try {
+        const token = currentComplaintAccessToken || localStorage.getItem(`saathi_token_${currentComplaint.reference_number}`) || '';
+        const res = await fetch(`${API_BASE}/api/complaints/${currentComplaint.reference_number}/confirm?token=${encodeURIComponent(token)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notes: 'Confirmed by user on Voice Studio review.' })
+        });
+
+        if (res.ok) {
+          const updated = await res.json();
+          renderComplaint(updated, currentComplaintAccessToken);
+          showAlert('Complaint successfully verified and confirmed under RBI guidelines!', 'success');
+        } else {
+          showAlert('Failed to confirm complaint. Please verify access token.', 'error');
+          btnConfirmComplaint.disabled = false;
+          btnConfirmComplaint.innerHTML = '<span>✅ Confirm & Submit Complaint</span>';
+        }
+      } catch (err) {
+        showAlert('Network error confirming complaint.', 'error');
+        btnConfirmComplaint.disabled = false;
+        btnConfirmComplaint.innerHTML = '<span>✅ Confirm & Submit Complaint</span>';
+      }
+    });
+  }
+
+  // Re-extract Complaint
+  if (btnReextractComplaint) {
+    btnReextractComplaint.addEventListener('click', async () => {
+      if (!currentJobToken) return;
+      btnReextractComplaint.disabled = true;
+      btnReextractComplaint.innerHTML = '<span>🔄 Extracting...</span>';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/voice/${currentJobToken}/extract`, { method: 'POST' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.complaint) {
+            renderComplaint(data.complaint, data.complaint.access_token);
+            showAlert('Complaint re-extracted successfully!', 'success');
+          }
+        } else {
+          showAlert('Re-extraction failed.', 'error');
+        }
+      } catch (err) {
+        showAlert('Network error re-extracting complaint.', 'error');
+      } finally {
+        btnReextractComplaint.disabled = false;
+        btnReextractComplaint.innerHTML = '<span>🔄 Re-extract</span>';
+      }
+    });
+  }
     }, 1500); // Poll every 1.5s
   }
 

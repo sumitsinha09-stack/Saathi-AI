@@ -13,6 +13,7 @@ from backend.app.config import settings
 from backend.app.database import engine, init_db
 from backend.app.routers.webhook import router as webhook_router
 from backend.app.routers.voice import router as voice_router
+from backend.app.routers.complaints import router as complaints_router
 
 LANDING_DIR = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "saathi-ai-landing")
@@ -52,6 +53,7 @@ app.add_middleware(
 # Register routers
 app.include_router(webhook_router)
 app.include_router(voice_router)
+app.include_router(complaints_router)
 
 
 @app.api_route("/", methods=["GET", "HEAD"], tags=["General"])
@@ -86,6 +88,26 @@ async def styles_css() -> FileResponse:
 @app.api_route("/script.js", methods=["GET", "HEAD"], include_in_schema=False)
 async def script_js() -> FileResponse:
     return FileResponse(os.path.join(LANDING_DIR, "script.js"), media_type="application/javascript")
+
+
+@app.get("/c/{token}", include_in_schema=False)
+async def review_page(token: str) -> FileResponse:
+    """Serves the mobile-friendly Complaint Review, Editing, and Confirmation page."""
+    review_file = os.path.join(LANDING_DIR, "review.html")
+    if not os.path.exists(review_file):
+        # Fallback to index if review.html not yet created
+        return FileResponse(os.path.join(LANDING_DIR, "index.html"))
+    return FileResponse(review_file)
+
+
+@app.api_route("/review.js", methods=["GET", "HEAD"], include_in_schema=False)
+async def review_js() -> FileResponse:
+    return FileResponse(os.path.join(LANDING_DIR, "review.js"), media_type="application/javascript")
+
+
+@app.api_route("/review.css", methods=["GET", "HEAD"], include_in_schema=False)
+async def review_css() -> FileResponse:
+    return FileResponse(os.path.join(LANDING_DIR, "review.css"), media_type="text/css")
 
 
 

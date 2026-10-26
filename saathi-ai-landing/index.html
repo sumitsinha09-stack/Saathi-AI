@@ -453,8 +453,12 @@
                 <div class="step-circle">3</div>
                 <span class="step-label">Transcribing</span>
               </div>
-              <div class="step-item" id="step-completed">
+              <div class="step-item" id="step-extracting">
                 <div class="step-circle">4</div>
+                <span class="step-label">Extracting</span>
+              </div>
+              <div class="step-item" id="step-completed">
+                <div class="step-circle">5</div>
                 <span class="step-label">Completed</span>
               </div>
             </div>
@@ -545,6 +549,106 @@
                 <button class="btn btn-secondary btn-sm btn-copy-translation" id="btn-copy-translation" type="button">
                   <span>📋 Copy Translation</span>
                 </button>
+              </div>
+            </div>
+
+            <!-- Phase 4: Validated Complaint Record Card -->
+            <div class="complaint-card" id="complaint-card" style="display: none;">
+              <div class="complaint-header">
+                <div class="complaint-header-left">
+                  <span class="complaint-icon">🛡️</span>
+                  <div>
+                    <h4>Official Incident Complaint Record</h4>
+                    <span class="complaint-subtitle">Structured extraction via local Qwen3 • Grounded in reported facts</span>
+                  </div>
+                </div>
+                <div class="complaint-header-right">
+                  <div class="ref-badge-wrapper">
+                    <span class="ref-badge" id="complaint-ref-badge">Ref: SAI-XXXXXX</span>
+                    <button class="btn-copy-ref" id="btn-copy-ref" type="button" title="Copy Reference Number">📋</button>
+                  </div>
+                  <span class="complaint-status-pill" id="complaint-status-pill">PENDING REVIEW</span>
+                </div>
+              </div>
+
+              <!-- Fallback Warning Banner if fallback summary was used -->
+              <div class="complaint-fallback-alert" id="complaint-fallback-alert" style="display: none;">
+                <span>⚠️ <strong>Fallback Summary Active:</strong> Model extraction timed out; safe deterministic fallback was generated. Please review all fields carefully.</span>
+              </div>
+
+              <!-- Structured Incident Details Grid -->
+              <div class="complaint-body">
+                <div class="complaint-grid">
+                  <div class="complaint-field-item">
+                    <span class="field-label">Incident Category</span>
+                    <span class="field-value" id="complaint-type">—</span>
+                  </div>
+                  <div class="complaint-field-item">
+                    <span class="field-label">Reported Entity / Bank</span>
+                    <span class="field-value" id="complaint-entity">—</span>
+                  </div>
+                  <div class="complaint-field-item">
+                    <span class="field-label">Reported Financial Loss</span>
+                    <span class="field-value highlight-loss" id="complaint-loss">—</span>
+                  </div>
+                  <div class="complaint-field-item">
+                    <span class="field-label">Suspected Scam</span>
+                    <span class="field-value" id="complaint-scam">—</span>
+                  </div>
+                  <div class="complaint-field-item">
+                    <span class="field-label">Incident Date</span>
+                    <span class="field-value" id="complaint-date">—</span>
+                  </div>
+                  <div class="complaint-field-item">
+                    <span class="field-label">Suspect Phone / Contact</span>
+                    <span class="field-value" id="complaint-phone">—</span>
+                  </div>
+                </div>
+
+                <div class="complaint-section-block">
+                  <h5>Incident Summary</h5>
+                  <div class="complaint-textbox" id="complaint-summary">—</div>
+                </div>
+
+                <div class="complaint-section-block">
+                  <h5>Detailed Complaint Narrative</h5>
+                  <div class="complaint-textbox narrative-box" id="complaint-description">—</div>
+                </div>
+
+                <div class="complaint-section-block" id="complaint-evidence-block" style="display: none;">
+                  <h5>Reported Evidence / Identifiers</h5>
+                  <div class="complaint-textbox" id="complaint-evidence">—</div>
+                </div>
+
+                <!-- Audit History Timeline -->
+                <div class="complaint-section-block" id="complaint-history-section">
+                  <h5>Status Audit History</h5>
+                  <div class="complaint-history-list" id="complaint-history-list">
+                    <!-- Events populated dynamically -->
+                  </div>
+                </div>
+              </div>
+
+              <div class="complaint-footer">
+                <div class="complaint-meta-note">
+                  <span id="complaint-security-note">🔒 Sensitive credentials ([REDACTED]) sanitized • 24h Expiring Access Token</span>
+                </div>
+                <div class="complaint-actions-row">
+                  <a class="btn btn-primary btn-sm btn-open-review" id="btn-open-review" href="#" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                    <span>📝 Open Review & Edit Page (/c)</span>
+                  </a>
+                  <button class="btn btn-secondary btn-sm" id="btn-reextract-complaint" type="button" title="Re-extract complaint from transcript">
+                    <span>🔄 Re-extract</span>
+                  </button>
+                  <button class="btn btn-primary btn-sm btn-confirm-complaint" id="btn-confirm-complaint" type="button">
+                    <span>✅ Confirm & Submit Complaint</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Confirmation Success Alert -->
+              <div class="complaint-confirmed-banner" id="complaint-confirmed-banner" style="display: none;">
+                <span>✅ <strong>Complaint Verified & Confirmed!</strong> Your report is registered under RBI dispute guidelines.</span>
               </div>
             </div>
 

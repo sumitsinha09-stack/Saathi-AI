@@ -1,5 +1,6 @@
 from datetime import datetime
-from sqlalchemy import Column, DateTime, Float, Integer, String, Text, func
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy.orm import relationship
 from backend.app.database import Base
 
 
@@ -49,4 +50,68 @@ class VoiceUpload(Base):
 
     def __repr__(self) -> str:
         return f"<VoiceUpload(token='{self.token}', format='{self.format}', size={self.file_size_bytes}, status='{self.status}')>"
+
+
+class Complaint(Base):
+    """
+    Model for recording AI-extracted complaints.
+    - Unique reference number format 'SAI-XXXXXX'.
+    - Stored token_hash guarantees secure authorized access without exposing the raw token.
+    - Linked to VoiceUpload by upload_token for end-to-end tracing and idempotency.
+    - Sanitized credential fields with sensitive values redacted.
+    """
+    __tablename__ = "complaints"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    reference_number = Column(String(16), unique=True, index=True, nullable=False)
+    token_hash = Column(String(64), index=True, nullable=False)
+    upload_token = Column(String(64), index=True, nullable=True)
+    status = Column(String(32), nullable=False, default="awaiting_review")
+    incident_type = Column(String(64), nullable=True)
+    summary = Column(Text, nullable=False)
+    english_summary = Column(Text, nullable=True)
+    description = Column(Text, nullable=False)
+    language = Column(String(16), nullable=False)
+    reported_entity = Column(String(128), nullable=True)
+    incident_date = Column(String(64), nullable=True)
+    financial_loss = Column(Float, nullable=True)
+    currency = Column(String(16), nullable=True)
+    phone_number = Column(String(32), nullable=True)
+    suspected_scam = Column(Boolean, nullable=True)
+    evidence_description = Column(Text, nullable=True)
+    is_fallback = Column(Boolean, nullable=False, default=False)
+    raw_transcript_redacted = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    confirmed_at = Column(DateTime(timezone=True), nullable=True)
+    cancelled_at = Column(DateTime(timezone=True), nullable=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+
+    history = relationship(
+        "ComplaintStatusHistory",
+        back_populates="complaint",
+        cascade="all, delete-orphan",
+        order_by="ComplaintStatusHistory.created_at",
+    )
+
+    def __repr__(self) -> str:
+        return f"<Complaint(ref='{self.reference_number}', status='{self.status}', loss={self.financial_loss} {self.currency})>"
+
+
+class ComplaintStatusHistory(Base):
+    """
+    Audit trail event recording status changes and timeline for a complaint.
+    """
+    __tablename__ = "complaint_status_history"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    complaint_id = Column(Integer, ForeignKey("complaints.id", ondelete="CASCADE"), index=True, nullable=False)
+    status = Column(String(32), nullable=False)
+    note = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    complaint = relationship("Complaint", back_populates="history")
+
+    def __repr__(self) -> str:
+        return f"<ComplaintStatusHistory(complaint_id={self.complaint_id}, status='{self.status}', created_at='{self.created_at}')>"
+
 

@@ -5,10 +5,14 @@ from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.database import get_db
+from backend.app.database import AsyncSessionLocal, get_db
+from backend.app.models import Complaint
 from backend.app.services.audio_validator import validate_and_save_audio
+from backend.app.services.complaint_service import ComplaintService
+from backend.app.services.extraction_service import ExtractionService
 from backend.app.services.transcription_service import TranscriptionService
 from backend.app.services.translation_service import TranslationService
 from backend.app.services.voice_service import VoiceService
@@ -29,7 +33,8 @@ async def process_voice_transcription(token: str, file_path: str) -> None:
     1. Updates job status to 'transcribing'.
     2. Runs Faster-Whisper inference asynchronously via thread pool.
     3. Saves detected language and transcript, transitioning to 'completed'.
-    4. MANDATORY PRIVACY POLICY: Unconditionally deletes temporary audio file in finally block.
+    4. Phase 4: Triggers automated AI complaint extraction & persistence.
+    5. MANDATORY PRIVACY POLICY: Unconditionally deletes temporary audio file in finally block.
     """
     logger.info(f"Background transcription job initiated for token: {token}")
     await VoiceService.update_status(token=token, status_value="transcribing")
@@ -53,6 +58,33 @@ async def process_voice_transcription(token: str, file_path: str) -> None:
             f"Transcription successfully completed for token: {token} "
             f"(Language: {result['language_name']}, Probability: {result['language_probability']})"
         )
+
+        # Phase 4 Pipeline: Trigger Complaint Extraction & Persistence
+        try:
+            logger.info(f"Initiating complaint extraction for token: {token}")
+            incident = await asyncio.to_thread(
+                ExtractionService.extract_incident,
+                transcript=result["transcript"],
+                language=result["language"],
+            )
+
+            try:
+                async with AsyncSessionLocal() as session:
+                    complaint = await ComplaintService.create_complaint(
+                        incident=incident,
+                        upload_token=token,
+                        db=session,
+                    )
+            except Exception as db_sess_err:
+                logger.debug(f"Direct DB session failed ({db_sess_err}); falling back to memory store")
+                complaint = await ComplaintService.create_complaint(
+                    incident=incident,
+                    upload_token=token,
+                    db=None,
+                )
+            logger.info(f"Complaint {complaint.get('reference_number')} successfully generated for token {token}")
+        except Exception as extract_err:
+            logger.error(f"Complaint extraction failed for token {token}: {extract_err}", exc_info=True)
 
     except Exception as e:
         logger.error(f"Transcription failed for token {token}: {e}", exc_info=True)
@@ -157,7 +189,105 @@ async def get_voice_status(
             detail="Voice upload not found or token has expired.",
         )
 
+    # Attach AI Complaint metadata if available
+    complaint_data = ComplaintService.get_complaint_by_upload_token(token)
+    if not complaint_data and db is not None:
+        try:
+            stmt = select(Complaint).where(Complaint.upload_token == token)
+            result = await db.execute(stmt)
+            record = result.scalar_one_or_none()
+            if record:
+                complaint_data = ComplaintService._model_to_dict(record)
+        except Exception:
+            pass
+
+    if complaint_data:
+        status_data["complaint_reference"] = complaint_data.get("reference_number")
+        status_data["complaint_status"] = complaint_data.get("status")
+        status_data["complaint_access_token"] = complaint_data.get("access_token")
+        status_data["complaint_is_fallback"] = complaint_data.get("is_fallback")
+        safe_complaint = dict(complaint_data)
+        safe_complaint.pop("token_hash", None)
+        status_data["complaint"] = safe_complaint
+    else:
+        status_data["complaint_reference"] = None
+        status_data["complaint_status"] = None
+        status_data["complaint_access_token"] = None
+        status_data["complaint_is_fallback"] = None
+        status_data["complaint"] = None
+
     return status_data
+
+
+@router.post(
+    "/{token}/extract",
+    status_code=status.HTTP_200_OK,
+    summary="Trigger AI complaint extraction on completed transcript",
+    description="Extracts structured complaint fields using local Qwen3 from completed speech transcript with sensitive information redaction.",
+)
+async def extract_complaint_for_voice(
+    token: str,
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    On-demand endpoint to extract and persist an Incident complaint from a completed transcript.
+    - Idempotent: returns existing complaint if already generated.
+    - Requires completed transcription.
+    - Runs 100% locally with redaction of sensitive credentials.
+    """
+    token = token.strip()
+    status_data = await VoiceService.get_status(token=token, db=db)
+    if not status_data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Voice upload not found or token has expired.",
+        )
+
+    if status_data.get("status") != "completed" or not status_data.get("transcript"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Transcription must be completed before extracting complaint (current status: '{status_data.get('status')}').",
+        )
+
+    # Idempotent check
+    existing = ComplaintService.get_complaint_by_upload_token(token)
+    if existing:
+        safe_c = dict(existing)
+        safe_c.pop("token_hash", None)
+        return {
+            "token": token,
+            "complaint": safe_c,
+            "message": "Complaint retrieved from existing record.",
+        }
+
+    # Run extraction via thread pool
+    try:
+        incident = await asyncio.to_thread(
+            ExtractionService.extract_incident,
+            transcript=status_data["transcript"],
+            language=status_data.get("language") or "hi",
+        )
+
+        complaint = await ComplaintService.create_complaint(
+            incident=incident,
+            upload_token=token,
+            db=db,
+        )
+
+        safe_c = dict(complaint)
+        safe_c.pop("token_hash", None)
+        return {
+            "token": token,
+            "complaint": safe_c,
+            "message": "Complaint successfully extracted and stored.",
+        }
+    except Exception as e:
+        logger.error(f"Manual complaint extraction failed for token {token}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Complaint extraction failed. Please try again.",
+        )
+
 
 
 @router.post(

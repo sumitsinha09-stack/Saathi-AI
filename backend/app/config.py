@@ -31,6 +31,12 @@ class Settings(BaseSettings):
     TRANSLATION_ENGINE: str = Field(default="ollama")  # ollama (primary for contextual Indic translation), or argos
     TRANSLATION_TIMEOUT_SECONDS: float = Field(default=30.0)
 
+    # Complaint Extraction Configuration (Phase 4)
+    EXTRACTION_MODEL: str = Field(default="qwen3:4b")
+    EXTRACTION_TIMEOUT_SECONDS: float = Field(default=45.0)
+    EXTRACTION_MAX_RETRIES: int = Field(default=3)
+    COMPLAINT_TOKEN_EXPIRY_HOURS: int = Field(default=24)
+
 
     # WhatsApp Cloud API & Meta Configuration
     WHATSAPP_VERIFY_TOKEN: str = Field(default="samaran_dev_verify_token_2026")
