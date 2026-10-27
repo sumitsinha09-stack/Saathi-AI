@@ -49,7 +49,17 @@ class TranscriptionService:
 
     _model: Optional[WhisperModel] = None
     _lock = threading.Lock()
+    _semaphore: Optional[threading.BoundedSemaphore] = None
     _loaded_model_size: Optional[str] = None
+
+    @classmethod
+    def _get_semaphore(cls) -> threading.BoundedSemaphore:
+        if cls._semaphore is None:
+            with cls._lock:
+                if cls._semaphore is None:
+                    max_concurrent = max(1, settings.MAX_CONCURRENT_TRANSCRIPTIONS)
+                    cls._semaphore = threading.BoundedSemaphore(max_concurrent)
+        return cls._semaphore
 
     @classmethod
     def get_model(cls) -> WhisperModel:
@@ -125,13 +135,14 @@ class TranscriptionService:
         logger.info(f"Starting local transcription for: '{file_path}'")
 
         try:
-            # task='transcribe' guarantees spoken language is preserved in its original script
-            segments, info = model.transcribe(
-                file_path,
-                beam_size=eff_beam,
-                vad_filter=eff_vad,
-                task="transcribe",
-            )
+            with cls._get_semaphore():
+                # task='transcribe' guarantees spoken language is preserved in its original script
+                segments, info = model.transcribe(
+                    file_path,
+                    beam_size=eff_beam,
+                    vad_filter=eff_vad,
+                    task="transcribe",
+                )
 
             # Accumulate transcribed segments
             transcript_parts = []

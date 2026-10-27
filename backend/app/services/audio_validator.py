@@ -166,6 +166,82 @@ class AudioValidationResult:
         self.filename = filename
 
 
+def verify_audio_decodability(file_path: str) -> float:
+    """
+    Verifies that the saved audio file can be decoded into valid audio frames
+    and samples using PyAV. Protects against:
+    - Empty or silent zero-sample containers
+    - Corrupted or truncated audio streams
+    - Unsupported or malformed codecs
+    - Decompression bomb attacks
+    Returns the decoded duration in seconds.
+    """
+    import av
+
+    try:
+        container = av.open(file_path)
+    except Exception as e:
+        logger.warning(f"Audio container inspection failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Audio file is corrupted or could not be decoded.",
+        )
+
+    audio_streams = container.streams.audio
+    if not audio_streams:
+        container.close()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Audio file contains no usable audio streams.",
+        )
+
+    stream = audio_streams[0]
+    total_samples = 0
+    frames_checked = 0
+    max_frames_to_check = 10
+
+    try:
+        channels = getattr(stream, "channels", 1) or 1
+        sample_rate = getattr(stream, "rate", 44100) or 44100
+        stream_duration = 0.0
+        if stream.duration and stream.time_base:
+            stream_duration = float(stream.duration * stream.time_base)
+
+        for frame in container.decode(stream):
+            total_samples += frame.samples
+            frames_checked += 1
+            if frames_checked >= max_frames_to_check:
+                break
+    except HTTPException:
+        raise
+    except Exception as decode_err:
+        logger.warning(f"Audio decoding error on sample frames: {decode_err}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Audio stream contains corrupted or unreadable audio samples.",
+        )
+    finally:
+        try:
+            container.close()
+        except Exception:
+            pass
+
+    if frames_checked == 0 or total_samples == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Audio file contains no usable audio samples.",
+        )
+
+    # Decompression bomb check: guard against unreasonable sample rate or channel configuration
+    if channels > 8 or sample_rate > 192000:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Audio parameters exceed safe processing limits.",
+        )
+
+    return stream_duration
+
+
 def validate_and_save_audio(
     file_bytes: bytes,
     content_type: Optional[str] = None,
@@ -178,8 +254,9 @@ def validate_and_save_audio(
     2. Rejects files exceeding max size (5 MB) (413 Payload Too Large)
     3. Validates actual format via binary magic bytes (415 Unsupported Media Type)
     4. Validates MIME type consistency (415 Unsupported Media Type)
-    5. Saves audio temporarily with a cryptographically secure token
-    6. Validates duration <= 120s (2 minutes) (400 Bad Request)
+    5. Saves audio temporarily with a cryptographically secure token & path traversal protection
+    6. Decodes initial audio frames via PyAV to verify usable audio samples & codec integrity
+    7. Validates duration <= 120s (2 minutes) (400 Bad Request)
     """
     file_size = len(file_bytes)
 
@@ -234,10 +311,16 @@ def validate_and_save_audio(
     token = secrets.token_urlsafe(32)
     safe_filename = f"{token}.{detected_format}"
 
-    # Determine storage directory
-    target_dir = storage_dir or settings.VOICE_UPLOAD_DIR
-    os.makedirs(target_dir, exist_ok=True)
-    target_path = os.path.join(target_dir, safe_filename)
+    # Determine storage directory and guard against path traversal
+    base_dir = os.path.abspath(storage_dir or settings.VOICE_UPLOAD_DIR)
+    os.makedirs(base_dir, exist_ok=True)
+    target_path = os.path.abspath(os.path.join(base_dir, safe_filename))
+
+    if not target_path.startswith(base_dir):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid target path detected.",
+        )
 
     # Write file securely
     try:
@@ -250,8 +333,34 @@ def validate_and_save_audio(
             detail="Failed to safely store audio recording. Please try again.",
         )
 
-    # 7. Extract actual duration from saved audio file
+    # 7. Deep validation: Verify actual audio samples can be decoded by PyAV
+    try:
+        decoded_dur = verify_audio_decodability(target_path)
+    except HTTPException:
+        # Clean up file on decoding failure
+        if os.path.exists(target_path):
+            try:
+                os.remove(target_path)
+            except OSError:
+                pass
+        raise
+    except Exception as e:
+        if os.path.exists(target_path):
+            try:
+                os.remove(target_path)
+            except OSError:
+                pass
+        logger.warning(f"Unexpected audio validation error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Audio file decoding failed. Please record or upload a valid audio note.",
+        )
+
+    # 8. Extract actual duration from saved audio file
     detected_duration = extract_audio_duration(target_path, detected_format)
+    if detected_duration is None or detected_duration <= 0:
+        detected_duration = decoded_dur if decoded_dur > 0 else client_duration
+
     final_duration = detected_duration if detected_duration is not None else client_duration
 
     # If duration exceeds 2 minutes, delete file and reject

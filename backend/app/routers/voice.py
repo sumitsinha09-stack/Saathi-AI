@@ -13,6 +13,7 @@ from backend.app.models import Complaint
 from backend.app.services.audio_validator import validate_and_save_audio
 from backend.app.services.complaint_service import ComplaintService
 from backend.app.services.extraction_service import ExtractionService
+from backend.app.services.rate_limiter import rate_limit
 from backend.app.services.transcription_service import TranscriptionService
 from backend.app.services.translation_service import TranslationService
 from backend.app.services.voice_service import VoiceService
@@ -20,6 +21,7 @@ from backend.app.services.voice_service import VoiceService
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/voice", tags=["Voice Recording & Ingestion"])
+
 
 
 class TranslateRequest(BaseModel):
@@ -110,6 +112,7 @@ async def process_voice_transcription(token: str, file_path: str) -> None:
     status_code=status.HTTP_201_CREATED,
     summary="Upload and validate a voice note or audio file",
     description="Accepts multipart/form-data audio uploads up to 5 MB and 2 minutes in duration. Validates binary headers, MIME type, and duration. Returns a secure token and processes audio asynchronously in background.",
+    dependencies=[Depends(rate_limit("voice_upload", "RATE_LIMIT_VOICE_UPLOAD"))],
 )
 async def upload_voice_note(
     background_tasks: BackgroundTasks,
@@ -166,6 +169,7 @@ async def upload_voice_note(
     status_code=status.HTTP_200_OK,
     summary="Poll status of an uploaded voice note",
     description="Returns current status (received, transcribing, completed, failed) of a voice upload using its secure token, including transcript and detected language when finished.",
+    dependencies=[Depends(rate_limit("voice_status", "RATE_LIMIT_VOICE_STATUS"))],
 )
 async def get_voice_status(
     token: str,
@@ -224,6 +228,7 @@ async def get_voice_status(
     status_code=status.HTTP_200_OK,
     summary="Trigger AI complaint extraction on completed transcript",
     description="Extracts structured complaint fields using local Qwen3 from completed speech transcript with sensitive information redaction.",
+    dependencies=[Depends(rate_limit("voice_upload", "RATE_LIMIT_VOICE_UPLOAD"))],
 )
 async def extract_complaint_for_voice(
     token: str,
@@ -295,6 +300,7 @@ async def extract_complaint_for_voice(
     status_code=status.HTTP_200_OK,
     summary="Translate transcript into English",
     description="Translates the stored transcript for a voice upload token into natural English locally. Preserves original speech and does not re-translate if already available unless force_refresh is requested.",
+    dependencies=[Depends(rate_limit("voice_translate", "RATE_LIMIT_VOICE_TRANSLATE"))],
 )
 async def translate_voice_transcript(
     payload: TranslateRequest,

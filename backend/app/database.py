@@ -31,10 +31,18 @@ Base = declarative_base()
 
 
 async def init_db() -> None:
-    """Initialize database tables."""
+    """Initialize database tables and apply safe schema updates."""
     try:
+        from sqlalchemy import text
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+            # Safe migrations for Phase 6 columns if tables already exist
+            try:
+                await conn.execute(text("ALTER TABLE complaint_status_history ADD COLUMN IF NOT EXISTS action_type VARCHAR(32);"))
+                await conn.execute(text("ALTER TABLE complaint_status_history ADD COLUMN IF NOT EXISTS is_demo BOOLEAN DEFAULT FALSE;"))
+                await conn.execute(text("ALTER TABLE complaint_status_history ADD COLUMN IF NOT EXISTS extra_data TEXT;"))
+            except Exception as mig_err:
+                logger.debug(f"Schema migration statement non-fatal check: {mig_err}")
         logger.info("Database tables initialized successfully.")
     except Exception as e:
         logger.warning(f"Database table initialization skipped (database connection unavailable): {e}")

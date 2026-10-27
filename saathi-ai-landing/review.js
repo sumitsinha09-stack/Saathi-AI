@@ -107,9 +107,38 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnConfirmCancelDialog = document.getElementById('btn-confirm-cancel-dialog');
   const cancelReasonInput = document.getElementById('cancel-reason-input');
 
-  // Unlocked Reporting Actions
-  const btnDownload1930 = document.getElementById('btn-download-1930');
-  const btnDownloadBankLetter = document.getElementById('btn-download-bank-letter');
+  // Phase 6 Relief Actions DOM Elements
+  const confirmedRefBadge = document.getElementById('confirmed-ref-badge');
+  const btnActionNotifyBank = document.getElementById('btn-action-notify-bank');
+  const btnActionCall1930 = document.getElementById('btn-action-call-1930');
+  const btnActionDownloadPdf = document.getElementById('btn-action-download-pdf');
+  const btnActionViewPortalGuide = document.getElementById('btn-action-view-portal-guide');
+  const btnActionFirSimulation = document.getElementById('btn-action-fir-simulation');
+  const btnActionTrackStatus = document.getElementById('btn-action-track-status');
+
+  // Phase 6 Modals
+  const modalBankEmail = document.getElementById('modal-bank-email');
+  const btnCloseBankModal = document.getElementById('btn-close-bank-modal');
+  const btnLaunchEmailClient = document.getElementById('btn-launch-email-client');
+  const bankEmailRecipient = document.getElementById('bank-email-recipient');
+  const bankEmailSubjectPreview = document.getElementById('bank-email-subject-preview');
+  const bankEmailBodyPreview = document.getElementById('bank-email-body-preview');
+
+  const modalCall1930 = document.getElementById('modal-call-1930');
+  const btnCloseCallModal = document.getElementById('btn-close-call-modal');
+  const btnProceedCall1930 = document.getElementById('btn-proceed-call-1930');
+
+  const modalPortalGuide = document.getElementById('modal-portal-guide');
+  const btnClosePortalModal = document.getElementById('btn-close-portal-modal');
+  const guideRefCode = document.getElementById('guide-ref-code');
+  const portalCopyTextarea = document.getElementById('portal-copy-textarea');
+  const btnCopyPortalText = document.getElementById('btn-copy-portal-text');
+  const portalCopyFeedback = document.getElementById('portal-copy-feedback');
+
+  const modalFirSimulation = document.getElementById('modal-fir-simulation');
+  const btnCloseSimModal = document.getElementById('btn-close-sim-modal');
+  const btnRunFirSimulation = document.getElementById('btn-run-fir-simulation');
+  const simTimelineBox = document.getElementById('sim-timeline-box');
 
   // Internal State
   let currentComplaint = null;
@@ -176,6 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (stateName === 'cancelled') {
       stopPolling();
       cardCancelled.style.display = 'block';
+      bannerConfirmed.style.display = 'none';
       displayStatusPill.textContent = 'Cancelled';
       displayStatusPill.className = 'status-pill status-cancelled';
       if (cancelledRef) cancelledRef.textContent = data.reference_number || 'N/A';
@@ -189,6 +219,9 @@ document.addEventListener('DOMContentLoaded', () => {
       bannerConfirmed.style.display = 'block';
       displayStatusPill.textContent = 'Confirmed';
       displayStatusPill.className = 'status-pill status-confirmed';
+      if (confirmedRefBadge) {
+        confirmedRefBadge.textContent = data.reference_number || (currentComplaint ? currentComplaint.reference_number : 'SAI-XXXXXX');
+      }
       setEditMode(false);
       btnEditPrimary.disabled = true;
       btnCancelPrimary.disabled = true;
@@ -211,6 +244,12 @@ document.addEventListener('DOMContentLoaded', () => {
     btnEditPrimary.disabled = true;
     btnCancelPrimary.disabled = true;
     btnToggleEdit.disabled = true;
+    if (btnActionNotifyBank) btnActionNotifyBank.disabled = true;
+    if (btnActionCall1930) btnActionCall1930.disabled = true;
+    if (btnActionDownloadPdf) btnActionDownloadPdf.disabled = true;
+    if (btnActionViewPortalGuide) btnActionViewPortalGuide.disabled = true;
+    if (btnActionFirSimulation) btnActionFirSimulation.disabled = true;
+    if (btnActionTrackStatus) btnActionTrackStatus.disabled = true;
   }
 
   // -------------------------------------------------------------------------
@@ -222,6 +261,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Header Reference & Timestamps
     if (displayRefNumber) {
       displayRefNumber.textContent = data.reference_number || 'PENDING ASSIGNMENT';
+    }
+    if (confirmedRefBadge && data.reference_number) {
+      confirmedRefBadge.textContent = data.reference_number;
     }
     if (displayTimestamp && data.created_at) {
       const dt = new Date(data.created_at);
@@ -621,110 +663,296 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -------------------------------------------------------------------------
-  // 9. Unlocked Reporting Document Generation
+  // 9. Phase 6: Post-Confirmation One-Tap Relief Actions & Modals
   // -------------------------------------------------------------------------
-  function downloadTextFile(filename, textContent) {
-    const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  async function recordComplaintAction(actionName, meta = {}) {
+    if (!COMPLAINT_TOKEN) return null;
+    try {
+      const url = `${API_BASE}/api/complaints/${encodeURIComponent(COMPLAINT_TOKEN)}/actions/${encodeURIComponent(actionName)}`;
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ metadata: meta }),
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        loggerWarn(`Action ${actionName} record returned ${resp.status}: ${err.detail || 'unknown'}`);
+        return null;
+      }
+      return await resp.json();
+    } catch (e) {
+      loggerWarn(`Failed to record action ${actionName}: ${e}`);
+      return null;
+    }
   }
 
-  if (btnDownload1930) {
-    btnDownload1930.addEventListener('click', () => {
-      if (!currentComplaint) return;
-      const f = currentComplaint.structured_fields || {};
-      const ref = currentComplaint.reference_number || 'SAI-XXXXXX';
+  function loggerWarn(msg) {
+    if (window.console && console.warn) console.warn(msg);
+  }
 
-      const content = `======================================================================
-NATIONAL CYBERCRIME REPORTING PORTAL (1930) — INCIDENT BRIEF
-Generated by Saathi AI — https://cybercrime.gov.in
-======================================================================
+  // -------------------------------------------------------------------------
+  // Action 1: Notify My Bank
+  // -------------------------------------------------------------------------
+  function buildBankEmailContent() {
+    if (!currentComplaint) return { subject: '', body: '' };
+    const f = currentComplaint.structured_fields || {};
+    const ref = currentComplaint.reference_number || 'SAI-XXXXXX';
+
+    const incidentDate = f.incident_date || '[Add transaction date and time]';
+    const incidentAmount = (f.financial_loss != null)
+      ? `${f.currency || 'INR'} ${Number(f.financial_loss).toLocaleString('en-IN')}`
+      : '[Add transaction amount and currency]';
+    const incidentSummary = f.summary || currentComplaint.english_summary || '[Add transaction details]';
+
+    const subject = `Urgent Fraud Report – Complaint ${ref}`;
+    const body = `Dear Bank Fraud Support Team,
+
+I am reporting a suspected fraudulent transaction and request urgent assistance.
 
 Complaint Reference: ${ref}
-Date of Filing: ${new Date().toLocaleDateString('en-IN')}
+Incident Date/Time: ${incidentDate}
+Reported Amount: ${incidentAmount}
 
-INCIDENT DETAILS:
-- Category: ${f.incident_type || 'Financial Fraud'}
-- Suspected Scam: ${f.suspected_scam ? 'Yes' : 'Unspecified'}
-- Incident Date: ${f.incident_date || 'Not stated'}
-- Reported Entity / Bank: ${f.reported_entity || 'Not stated'}
-- Suspect Phone / Contact: ${f.phone_number || 'Not stated'}
-- Financial Loss: ${f.financial_loss != null ? `${f.currency || 'INR'} ${Number(f.financial_loss).toLocaleString('en-IN')}` : 'Nil / Unspecified'}
+Incident Details:
+${incidentSummary}
 
-INCIDENT SUMMARY:
-${f.summary || currentComplaint.english_summary || ''}
+Please investigate this incident urgently, review the transaction, and consider placing a hold on the beneficiary account or transaction where legally and operationally permitted.
 
-DETAILED NARRATIVE:
-${f.description || ''}
+Please advise me on the steps required to secure my account, dispute the transaction, and pursue recovery of the funds where possible.
 
-TRANSACTION EVIDENCE & IDENTIFIERS:
-${f.evidence_description || 'None provided'}
+I can provide additional information through your official support channel.
 
-ORIGINAL TRANSCRIPT (Preserved Language: ${currentComplaint.language_name || 'Native'}):
-${currentComplaint.original_transcript || 'N/A'}
+Regards,
+[Your Name]`;
 
-======================================================================
-NOTICE: This document is prepared for immediate filing on 1930 / cybercrime.gov.in.
-All credentials have been sanitized under cybersecurity safety standards.
-======================================================================`;
+    return { subject, body };
+  }
 
-      downloadTextFile(`Cybercrime_1930_${ref}.txt`, content);
-      showAlert(`1930 Filing Summary downloaded for ${ref}.`, 'success');
+  if (btnActionNotifyBank) {
+    btnActionNotifyBank.addEventListener('click', () => {
+      const { subject, body } = buildBankEmailContent();
+      if (bankEmailSubjectPreview) bankEmailSubjectPreview.textContent = subject;
+      if (bankEmailBodyPreview) bankEmailBodyPreview.textContent = body;
+      if (modalBankEmail) modalBankEmail.style.display = 'flex';
     });
   }
 
-  if (btnDownloadBankLetter) {
-    btnDownloadBankLetter.addEventListener('click', () => {
-      if (!currentComplaint) return;
-      const f = currentComplaint.structured_fields || {};
-      const ref = currentComplaint.reference_number || 'SAI-XXXXXX';
-      const today = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  if (btnCloseBankModal && modalBankEmail) {
+    btnCloseBankModal.addEventListener('click', () => {
+      modalBankEmail.style.display = 'none';
+    });
+  }
 
-      const content = `Date: ${today}
+  if (btnLaunchEmailClient) {
+    btnLaunchEmailClient.addEventListener('click', async () => {
+      const { subject, body } = buildBankEmailContent();
+      const recipient = bankEmailRecipient ? (bankEmailRecipient.value || '').trim() : '';
 
-To,
-The Branch Manager / Nodal Grievance Officer,
-${f.reported_entity || '[Bank / Payment Provider Name]'},
+      // Record backend action
+      await recordComplaintAction('notify_bank', { recipient: recipient ? 'provided' : 'unspecified' });
 
-SUBJECT: URGENT COMPLAINT REGARDING UNAUTHORIZED FRAUDULENT TRANSACTIONS — DEMAND FOR IMMEDIATE LIEN / REVERSAL UNDER RBI GUIDELINES
-Reference: Saathi AI Case ID ${ref}
+      // Build mailto link
+      const mailtoUrl = `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.location.href = mailtoUrl;
 
-Respected Sir/Madam,
+      if (modalBankEmail) modalBankEmail.style.display = 'none';
+      showAlert('Email draft prepared in your email client. Remember to tap Send.', 'info');
+    });
+  }
 
-I am writing to formally report an unauthorized fraudulent transaction that took place on ${f.incident_date || 'recently'}, resulting in a total financial loss of ${f.financial_loss != null ? `${f.currency || 'INR'} ${Number(f.financial_loss).toLocaleString('en-IN')}` : '[Amount]'}.
+  // -------------------------------------------------------------------------
+  // Action 2: Call Cybercrime Helpline (1930)
+  // -------------------------------------------------------------------------
+  if (btnActionCall1930) {
+    btnActionCall1930.addEventListener('click', () => {
+      if (modalCall1930) modalCall1930.style.display = 'flex';
+    });
+  }
 
-1. INCIDENT BRIEF:
-${f.summary || ''}
+  if (btnCloseCallModal && modalCall1930) {
+    btnCloseCallModal.addEventListener('click', () => {
+      modalCall1930.style.display = 'none';
+    });
+  }
 
-2. TRANSACTION DETAILS & SUSPECT EVIDENCE:
-${f.evidence_description || 'Transaction details provided in statement.'}
-Suspect Phone Number / Origin: ${f.phone_number || 'Reported to authorities'}
+  if (btnProceedCall1930) {
+    btnProceedCall1930.addEventListener('click', async () => {
+      await recordComplaintAction('call_1930');
+      if (modalCall1930) modalCall1930.style.display = 'none';
+      showAlert('Calling 1930 helpline initiated.', 'info');
+    });
+  }
 
-3. DETAILED FACTUAL STATEMENT:
+  // -------------------------------------------------------------------------
+  // Action 3: Download Complaint PDF
+  // -------------------------------------------------------------------------
+  if (btnActionDownloadPdf) {
+    btnActionDownloadPdf.addEventListener('click', async () => {
+      if (!COMPLAINT_TOKEN) return;
+      showAlert('Preparing your official complaint PDF...', 'info');
+
+      // The backend /api/complaints/{token}/pdf endpoint generates PDF and records download_pdf
+      const pdfUrl = `${API_BASE}/api/complaints/${encodeURIComponent(COMPLAINT_TOKEN)}/pdf`;
+      const a = document.createElement('a');
+      a.href = pdfUrl;
+      const ref = currentComplaint ? currentComplaint.reference_number : 'complaint';
+      a.download = `${ref}-complaint.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      showAlert('Complaint PDF download initiated successfully.', 'success');
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Action 4: Copy Cybercrime Portal Filing Steps
+  // -------------------------------------------------------------------------
+  function buildPortalFilingDetails() {
+    if (!currentComplaint) return '';
+    const f = currentComplaint.structured_fields || {};
+    const ref = currentComplaint.reference_number || 'SAI-XXXXXX';
+    const amount = (f.financial_loss != null)
+      ? `${f.currency || 'INR'} ${Number(f.financial_loss).toLocaleString('en-IN')}`
+      : 'Unspecified';
+
+    return `SAATHI AI CITIZEN INCIDENT SUMMARY (Reference: cybercrime.gov.in)
+======================================================================
+Case Reference ID: ${ref}
+Incident Category: ${f.incident_type || 'Financial Cyber Fraud'}
+Incident Date: ${f.incident_date || 'Unspecified'}
+Loss Amount: ${amount}
+Reported Entity / Bank: ${f.reported_entity || 'Reported in statement'}
+Suspect Phone / Contact: ${f.phone_number || 'Reported to authorities'}
+
+TRANSACTION EVIDENCE & IDENTIFIERS:
+${f.evidence_description || 'Transaction references provided in statement.'}
+
+VERIFIED INCIDENT SUMMARY:
+${f.summary || currentComplaint.english_summary || ''}
+
+DETAILED FACTUAL STATEMENT:
 ${f.description || ''}
 
-4. REGULATORY DEMAND UNDER RBI CIRCULAR DBR.No.Leg.BC.78/09.07.005/2017-18:
-Under RBI circular on "Customer Protection – Limiting Liability of Customers in Unauthorised Electronic Banking Transactions", since this cyber-fraud was reported immediately:
-- I request an immediate freeze / lien on the beneficiary account where the funds were transferred.
-- I request shadow reversal / credit of the disputed amount within 10 working days as mandated.
-- Please provide the formal acknowledgment with internal dispute tracking number.
+======================================================================
+Prepared via Saathi AI for official cybercrime.gov.in citizen filing.
+Protected under cybersecurity zero-credential standards (No PINs/OTPs).`;
+  }
 
-Yours sincerely,
+  if (btnActionViewPortalGuide) {
+    btnActionViewPortalGuide.addEventListener('click', () => {
+      const filingText = buildPortalFilingDetails();
+      if (portalCopyTextarea) portalCopyTextarea.value = filingText;
+      if (guideRefCode && currentComplaint) guideRefCode.textContent = currentComplaint.reference_number || 'SAI-XXXXXX';
+      if (portalCopyFeedback) portalCopyFeedback.style.display = 'none';
+      if (modalPortalGuide) modalPortalGuide.style.display = 'flex';
+    });
+  }
 
-Victim Signature: __________________________
-Name: [Account Holder Name]
-Account Number: [Account Number]
-Registered Mobile: [Mobile Number]
-Saathi AI Verification Ref: ${ref}`;
+  if (btnClosePortalModal && modalPortalGuide) {
+    btnClosePortalModal.addEventListener('click', () => {
+      modalPortalGuide.style.display = 'none';
+    });
+  }
 
-      downloadTextFile(`Bank_Dispute_Letter_${ref}.txt`, content);
-      showAlert(`Bank Dispute Notice generated for ${ref}.`, 'success');
+  if (btnCopyPortalText) {
+    btnCopyPortalText.addEventListener('click', async () => {
+      const text = portalCopyTextarea ? portalCopyTextarea.value : buildPortalFilingDetails();
+      try {
+        await navigator.clipboard.writeText(text);
+        if (portalCopyFeedback) {
+          portalCopyFeedback.style.display = 'block';
+          setTimeout(() => { portalCopyFeedback.style.display = 'none'; }, 3000);
+        }
+        showAlert('Filing details copied to clipboard.', 'success');
+      } catch {
+        if (portalCopyTextarea) {
+          portalCopyTextarea.select();
+          document.execCommand('copy');
+          if (portalCopyFeedback) portalCopyFeedback.style.display = 'block';
+        }
+      }
+      // Record copy_filing_guide action on backend
+      await recordComplaintAction('copy_filing_guide');
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Action 5: Simulated FIR (Demo Mode)
+  // -------------------------------------------------------------------------
+  if (btnActionFirSimulation) {
+    btnActionFirSimulation.addEventListener('click', () => {
+      if (modalFirSimulation) {
+        // Reset sim UI state
+        if (simTimelineBox) simTimelineBox.style.display = 'none';
+        for (let i = 1; i <= 4; i++) {
+          const stepEl = document.getElementById(`sim-step-${i}`);
+          const timeEl = document.getElementById(`sim-time-${i}`);
+          if (stepEl) stepEl.className = 'sim-step';
+          if (timeEl) timeEl.textContent = '—';
+        }
+        if (btnRunFirSimulation) {
+          btnRunFirSimulation.disabled = false;
+          btnRunFirSimulation.textContent = '▶️ Run FIR Simulation';
+        }
+        modalFirSimulation.style.display = 'flex';
+      }
+    });
+  }
+
+  if (btnCloseSimModal && modalFirSimulation) {
+    btnCloseSimModal.addEventListener('click', () => {
+      modalFirSimulation.style.display = 'none';
+    });
+  }
+
+  if (btnRunFirSimulation) {
+    btnRunFirSimulation.addEventListener('click', async () => {
+      btnRunFirSimulation.disabled = true;
+      btnRunFirSimulation.textContent = 'Running Demo Simulation...';
+      if (simTimelineBox) simTimelineBox.style.display = 'block';
+
+      // Record backend demo action
+      await recordComplaintAction('fir_simulation');
+
+      const nowTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      // Step-by-step simulated progress animation
+      const runStep = (stepNum, delayMs) => {
+        return new Promise(resolve => {
+          setTimeout(() => {
+            const stepEl = document.getElementById(`sim-step-${stepNum}`);
+            const timeEl = document.getElementById(`sim-time-${stepNum}`);
+            if (stepEl) {
+              stepEl.className = 'sim-step completed';
+              const icon = stepEl.querySelector('.sim-step-icon');
+              if (icon) icon.textContent = '✅';
+            }
+            if (timeEl) timeEl.textContent = `Completed at ${nowTime()}`;
+            resolve();
+          }, delayMs);
+        });
+      };
+
+      await runStep(1, 400);
+      await runStep(2, 600);
+      await runStep(3, 600);
+      await runStep(4, 500);
+
+      btnRunFirSimulation.textContent = 'Simulation Completed (Demo Mode)';
+      showAlert('FIR Simulation successfully completed in DEMO MODE.', 'info');
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Action 6: Track Complaint Status (/helpline)
+  // -------------------------------------------------------------------------
+  if (btnActionTrackStatus) {
+    btnActionTrackStatus.addEventListener('click', async () => {
+      const ref = currentComplaint ? currentComplaint.reference_number : '';
+      await recordComplaintAction('view_status');
+      const targetUrl = ref ? `/helpline?ref=${encodeURIComponent(ref)}` : '/helpline';
+      window.open(targetUrl, '_blank');
     });
   }
 

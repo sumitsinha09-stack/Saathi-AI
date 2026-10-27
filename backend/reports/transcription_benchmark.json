@@ -1,0 +1,299 @@
+{
+  "benchmark_timestamp": "2026-10-27T00:11:41Z",
+  "total_test_cases": 20,
+  "valid_speech_cases": 16,
+  "negative_test_cases": 4,
+  "total_benchmark_time_seconds": 476.54,
+  "overall_language_detection_accuracy": 1.0,
+  "overall_negative_rejection_accuracy": 0.75,
+  "category_summary": {
+    "English speech": {
+      "samples_count": 4,
+      "avg_wer": 0.1605,
+      "avg_cer": 0.0401,
+      "language_detection_accuracy": 1.0
+    },
+    "Hindi speech": {
+      "samples_count": 4,
+      "avg_wer": 0.2741,
+      "avg_cer": 0.1946,
+      "language_detection_accuracy": 1.0
+    },
+    "Tamil speech": {
+      "samples_count": 4,
+      "avg_wer": 0.1654,
+      "avg_cer": 0.1409,
+      "language_detection_accuracy": 1.0
+    },
+    "Accent variation": {
+      "samples_count": 2,
+      "avg_wer": 0.1454,
+      "avg_cer": 0.0657,
+      "language_detection_accuracy": 1.0
+    },
+    "Background noise": {
+      "samples_count": 2,
+      "avg_wer": 0.247,
+      "avg_cer": 0.1629,
+      "language_detection_accuracy": 1.0
+    },
+    "Empty or silent audio": {
+      "samples_count": 1,
+      "rejection_accuracy": 0.0
+    },
+    "Excessively long audio": {
+      "samples_count": 1,
+      "rejection_accuracy": 1.0
+    },
+    "Unsupported or malformed audio": {
+      "samples_count": 2,
+      "rejection_accuracy": 1.0
+    }
+  },
+  "detailed_results": [
+    {
+      "id": "en_01",
+      "filename": "en_01_bank_impersonation.wav",
+      "category": "English speech",
+      "expected_language": "en",
+      "detected_language": "en",
+      "language_correct": true,
+      "latency_seconds": 21.264,
+      "wer": 0.2812,
+      "cer": 0.1011,
+      "ref_snippet": "Hello, this is officer Rajesh Sharma calling from Apex Union...",
+      "hyp_snippet": "Hello, this is Officer Rajesh Sharma calling from Apex Union..."
+    },
+    {
+      "id": "en_02",
+      "filename": "en_02_kyc_freeze.wav",
+      "category": "English speech",
+      "expected_language": "en",
+      "detected_language": "en",
+      "language_correct": true,
+      "latency_seconds": 13.315,
+      "wer": 0.2667,
+      "cer": 0.0593,
+      "ref_snippet": "Dear consumer, your electricity power supply will be disconn...",
+      "hyp_snippet": "Dear consumer, your electricity power supply will be disconn..."
+    },
+    {
+      "id": "en_03",
+      "filename": "en_03_lottery_scam.wav",
+      "category": "English speech",
+      "expected_language": "en",
+      "detected_language": "en",
+      "language_correct": true,
+      "latency_seconds": 9.93,
+      "wer": 0.0455,
+      "cer": 0.0,
+      "ref_snippet": "Congratulations! Your mobile number has won a cash prize of ...",
+      "hyp_snippet": "Congratulations! Your mobile number has won a cash prize of ..."
+    },
+    {
+      "id": "en_04",
+      "filename": "en_04_courier_fraud.wav",
+      "category": "English speech",
+      "expected_language": "en",
+      "detected_language": "en",
+      "language_correct": true,
+      "latency_seconds": 8.502,
+      "wer": 0.0488,
+      "cer": 0.0,
+      "ref_snippet": "Good day, this is automated dispatch from SpeedPost Express ...",
+      "hyp_snippet": "Good day, this is automated dispatch from Speed Post Express..."
+    },
+    {
+      "id": "hi_01",
+      "filename": "hi_01_bank_otp.wav",
+      "category": "Hindi speech",
+      "expected_language": "hi",
+      "detected_language": "hi",
+      "language_correct": true,
+      "latency_seconds": 36.471,
+      "wer": 0.2159,
+      "cer": 0.1429,
+      "ref_snippet": "नमस्ते, मैं भारत सेवा बैंक के ग्राहक सेवा विभाग से बात कर रह...",
+      "hyp_snippet": "नमस्ते। मैं भारत सेवा बैंक के ग्राहक सेवा विभाग से बात कर रह..."
+    },
+    {
+      "id": "hi_02",
+      "filename": "hi_02_electricity_bill.wav",
+      "category": "Hindi speech",
+      "expected_language": "hi",
+      "detected_language": "hi",
+      "language_correct": true,
+      "latency_seconds": 19.964,
+      "wer": 0.3333,
+      "cer": 0.2069,
+      "ref_snippet": "प्रिय उपभोक्ता, आपका बिजली बिल बकाया है। यदि आज शाम तक चार ह...",
+      "hyp_snippet": "आपका बिजली बिल बकाया है। यदि आज शाम तक 4,500 रुपय का भूतान न..."
+    },
+    {
+      "id": "hi_03",
+      "filename": "hi_03_instant_loan.wav",
+      "category": "Hindi speech",
+      "expected_language": "hi",
+      "detected_language": "hi",
+      "language_correct": true,
+      "latency_seconds": 44.752,
+      "wer": 0.2614,
+      "cer": 0.2193,
+      "ref_snippet": "बधाई हो, धनवर्षा फाइनेंस द्वारा आपका पचास हज़ार रुपये का पर्...",
+      "hyp_snippet": "बधाई हो, धनवर्षा फाइनेंस द्वारा आपका 50,000 रूपे का पर्शनल ल..."
+    },
+    {
+      "id": "hi_04",
+      "filename": "hi_04_part_time_job.wav",
+      "category": "Hindi speech",
+      "expected_language": "hi",
+      "detected_language": "hi",
+      "language_correct": true,
+      "latency_seconds": 33.443,
+      "wer": 0.2857,
+      "cer": 0.2091,
+      "ref_snippet": "नमस्ते, स्टार मीडिया मार्केटिंग से अंशकालिक नौकरी का सुनहरा ...",
+      "hyp_snippet": "नमस्ते, स्टार मीदिया मार्केटिंग से वश्कालिक नौट्री का सुनह्र..."
+    },
+    {
+      "id": "ta_01",
+      "filename": "ta_01_bank_block.wav",
+      "category": "Tamil speech",
+      "expected_language": "ta",
+      "detected_language": "ta",
+      "language_correct": true,
+      "latency_seconds": 135.806,
+      "wer": 0.2059,
+      "cer": 0.1474,
+      "ref_snippet": "வணக்கம், நான் பாரத் வங்கி மேலாளர் பேசுகிறேன். உங்கள் ஏடிஎம் ...",
+      "hyp_snippet": "வணக்கம், நான் பாரத் வங்கி மேலாளர் பேசுகிறேன், உங்கள் எட்டியே..."
+    },
+    {
+      "id": "ta_02",
+      "filename": "ta_02_kyc_warning.wav",
+      "category": "Tamil speech",
+      "expected_language": "ta",
+      "detected_language": "ta",
+      "language_correct": true,
+      "latency_seconds": 14.819,
+      "wer": 0.0781,
+      "cer": 0.0357,
+      "ref_snippet": "அன்பார்ந்த வாடிக்கையாளரே, உங்கள் சிம் கார்டு ஆவண சரிபார்ப்பு...",
+      "hyp_snippet": "அன்பார்ந்த வாடிக்கையாளரே, உங்கள் சிம்கார்து ஆவணசரிபார்ப்பு ந..."
+    },
+    {
+      "id": "ta_03",
+      "filename": "ta_03_customs_parcel.wav",
+      "category": "Tamil speech",
+      "expected_language": "ta",
+      "detected_language": "ta",
+      "language_correct": true,
+      "latency_seconds": 92.231,
+      "wer": 0.2029,
+      "cer": 0.2062,
+      "ref_snippet": "வணக்கம், டெல்லி சுங்கத்துறை அலுவலகத்திலிருந்து பேசுகிறோம். உ...",
+      "hyp_snippet": "வணக்கம் ! டெல்லீ சுங்க துரை அலுவலகத்திலிருந்து பேசுகிறோம் உங..."
+    },
+    {
+      "id": "ta_04",
+      "filename": "ta_04_prize_scam.wav",
+      "category": "Tamil speech",
+      "expected_language": "ta",
+      "detected_language": "ta",
+      "language_correct": true,
+      "latency_seconds": 12.917,
+      "wer": 0.1746,
+      "cer": 0.1744,
+      "ref_snippet": "வாழ்த்துகள்! எங்கள் மெகா பம்பர் பரிசில் உங்களுக்கு ஐந்து லட்...",
+      "hyp_snippet": "வாழ்த்துகள் எங்கள் மேகப் அம்பர் பரிசில் உங்களுக்கு 5 lakh ரூ..."
+    },
+    {
+      "id": "accent_01",
+      "filename": "accent_01_indian_english_speed.wav",
+      "category": "Accent variation",
+      "expected_language": "en",
+      "detected_language": "en",
+      "language_correct": true,
+      "latency_seconds": 7.822,
+      "wer": 0.2353,
+      "cer": 0.1135,
+      "ref_snippet": "Hello sir, I am calling urgently from Global Cyber Shield He...",
+      "hyp_snippet": "Hello sir, I am calling urgently from Global Help Desk. We h..."
+    },
+    {
+      "id": "accent_02",
+      "filename": "accent_02_fast_hinglish.wav",
+      "category": "Accent variation",
+      "expected_language": "en",
+      "detected_language": "en",
+      "language_correct": true,
+      "latency_seconds": 7.904,
+      "wer": 0.0556,
+      "cer": 0.0179,
+      "ref_snippet": "Hello sir, your credit card reward points are expiring today...",
+      "hyp_snippet": "Hello sir, your credit card reward points are expiring today..."
+    },
+    {
+      "id": "noise_01",
+      "filename": "noise_01_traffic_english.wav",
+      "category": "Background noise",
+      "expected_language": "en",
+      "detected_language": "en",
+      "language_correct": true,
+      "latency_seconds": 7.13,
+      "wer": 0.2083,
+      "cer": 0.0709,
+      "ref_snippet": "Urgent notice from Axis Federal Credit office. A pending pay...",
+      "hyp_snippet": "Urgent notice from Axis Federal Credit Office. Upending paym..."
+    },
+    {
+      "id": "noise_02",
+      "filename": "noise_02_cafe_hindi.wav",
+      "category": "Background noise",
+      "expected_language": "hi",
+      "detected_language": "hi",
+      "language_correct": true,
+      "latency_seconds": 10.178,
+      "wer": 0.2857,
+      "cer": 0.2549,
+      "ref_snippet": "नमस्ते, आपके खाते में सात हज़ार रुपये का कैशबैक आया है। इसे ...",
+      "hyp_snippet": "नमस्ते, आपके खाते में 7,000 लूफे का कैशबैट आया है, इसे क्लेम..."
+    },
+    {
+      "id": "neg_01",
+      "filename": "neg_01_silent.wav",
+      "category": "Empty or silent audio",
+      "is_valid": false,
+      "rejected_correctly": false,
+      "expected_rejection": "No usable audio samples or zero amplitude detected",
+      "actual_rejection_detail": ""
+    },
+    {
+      "id": "neg_02",
+      "filename": "neg_02_too_long.wav",
+      "category": "Excessively long audio",
+      "is_valid": false,
+      "rejected_correctly": true,
+      "expected_rejection": "Audio duration exceeds maximum limit of 120 seconds",
+      "actual_rejection_detail": "400: Audio recording duration (125.0s) exceeds maximum limit of 120 seconds (2 minutes)."
+    },
+    {
+      "id": "neg_03",
+      "filename": "neg_03_corrupted_header.wav",
+      "category": "Unsupported or malformed audio",
+      "is_valid": false,
+      "rejected_correctly": true,
+      "expected_rejection": "Audio stream decoding failed or container is malformed",
+      "actual_rejection_detail": "400: Audio recording duration (134217.7s) exceeds maximum limit of 120 seconds (2 minutes)."
+    },
+    {
+      "id": "neg_04",
+      "filename": "neg_04_bad_codec.wav",
+      "category": "Unsupported or malformed audio",
+      "is_valid": false,
+      "rejected_correctly": true,
+      "expected_rejection": "Audio format validation failed; unsupported header or codec",
+      "actual_rejection_detail": "415: Invalid or unsupported audio format. Allowed formats: .webm, .ogg, .mp3, .wav, .m4a."
+    }
+  ]
+}

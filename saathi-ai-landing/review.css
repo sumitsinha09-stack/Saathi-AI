@@ -953,6 +953,289 @@
   cursor: pointer;
 }
 
+/* Phase 6 Post-Confirmation Relief Action Styles */
+.confirmed-header-content {
+  flex: 1;
+}
+
+.confirmed-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+}
+
+.ref-badge-highlight {
+  font-family: monospace;
+  font-size: 1rem;
+  color: #fff;
+  letter-spacing: 0.05em;
+}
+
+.action-card.highlight-action-card {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.action-card.demo-action-card {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.demo-card-badge {
+  display: inline-block;
+  background: #f59e0b;
+  color: #000;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  letter-spacing: 0.05em;
+}
+
+.btn-danger-action {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  color: #fff !important;
+}
+
+.btn-demo-action {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  color: #000 !important;
+}
+
+.modal-box-large {
+  max-width: 680px !important;
+}
+
+.email-preview-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+
+.email-preview-header {
+  font-size: 0.88rem;
+  color: #334155;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+}
+
+.email-pre-text {
+  font-family: inherit;
+  font-size: 0.82rem;
+  color: #1e293b;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 220px;
+  overflow-y: auto;
+  line-height: 1.45;
+}
+
+.modal-alert-note {
+  font-size: 0.82rem;
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.helpline-advice-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.85rem;
+}
+
+.helpline-advice-box ul {
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.desktop-fallback-note {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 0.82rem;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.disclaimer-muted {
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.official-portal-banner {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.portal-link-highlight {
+  color: #1d4ed8;
+  font-weight: 700;
+  text-decoration: underline;
+  margin-left: 6px;
+}
+
+.domain-warning {
+  color: #b45309;
+  font-size: 0.78rem;
+}
+
+.filing-steps-list {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.reference-distinction-box {
+  background: #fefce8;
+  border: 1px solid #fef08a;
+  color: #854d0e;
+  font-size: 0.82rem;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.copy-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.btn-copy-small {
+  background: #e2e8f0;
+  border: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #334155;
+  transition: background 0.15s ease;
+}
+
+.btn-copy-small:hover {
+  background: #cbd5e1;
+}
+
+.copy-feedback-msg {
+  color: #16a34a;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-top: 4px;
+  display: block;
+}
+
+.demo-persistent-banner {
+  background: #fef3c7;
+  border: 2px solid #f59e0b;
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  color: #78350f;
+}
+
+.demo-banner-title {
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.demo-banner-text {
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.btn-run-simulation {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #000;
+  border: none;
+  padding: 10px 20px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.sim-hint {
+  display: block;
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.sim-timeline-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  margin-top: 14px;
+}
+
+.sim-steps-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sim-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+}
+
+.sim-step.active, .sim-step.completed {
+  opacity: 1;
+}
+
+.sim-step.completed .sim-step-icon {
+  color: #16a34a;
+}
+
+.sim-step-icon {
+  font-size: 1.1rem;
+}
+
+.sim-step-content strong {
+  font-size: 0.86rem;
+  color: #0f172a;
+}
+
+.sim-step-content p {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 2px 0;
+}
+
+.sim-timestamp {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
 /* Animations */
 @keyframes spin {
   to { transform: rotate(360deg); }

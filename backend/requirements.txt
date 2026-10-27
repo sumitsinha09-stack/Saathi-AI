@@ -15,3 +15,4 @@ python-multipart>=0.0.12
 tinytag>=2.0.0
 mutagen>=1.47.0
 ebmlite>=3.3.0
+reportlab>=4.0.0

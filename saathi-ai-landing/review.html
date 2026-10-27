@@ -115,39 +115,94 @@
         </div>
       </section>
 
-      <!-- STATE 4: CONFIRMED STATE BANNER (Shown above review when confirmed) -->
+      <!-- STATE 4: CONFIRMED STATE — NEXT STEPS & RELIEF ACTIONS -->
       <section class="confirmed-banner" id="banner-confirmed" style="display: none;">
         <div class="confirmed-badge-row">
           <div class="confirmed-icon">✅</div>
-          <div>
-            <h2 class="confirmed-title">Complaint Confirmed by Victim</h2>
+          <div class="confirmed-header-content">
+            <div class="confirmed-meta-pill">
+              <span>Verified Complaint ID:</span>
+              <strong id="confirmed-ref-badge" class="ref-badge-highlight">SAI-XXXXXX</strong>
+            </div>
+            <h2 class="confirmed-title">Next Steps: Protect Yourself and Report the Incident</h2>
             <p class="confirmed-desc">
-              Your incident details have been finalized and verified. Formal reporting actions are now unlocked below.
-              <em>(Note: Your complaint has not been submitted externally. You control when and where to send it.)</em>
+              Your incident particulars have been confirmed and locked. The one-tap relief and reporting actions below are now unlocked.
+              <em>(Note: Your complaint has not been submitted externally. You decide when and where to send it.)</em>
             </p>
           </div>
         </div>
 
         <div class="unlocked-actions-grid">
-          <div class="action-card">
-            <div class="action-header">
-              <span class="action-icon">📄</span>
-              <strong>National Cybercrime Portal (1930)</strong>
-            </div>
-            <p class="action-subtext">Download pre-formatted dispute narrative and evidence sheet ready for cybercrime.gov.in.</p>
-            <button type="button" class="btn-unlocked-action" id="btn-download-1930">
-              📥 Download 1930 Filing Summary
-            </button>
-          </div>
-
+          <!-- Action 1: Notify My Bank -->
           <div class="action-card">
             <div class="action-header">
               <span class="action-icon">🏦</span>
-              <strong>Bank Fraud & Dispute Letter</strong>
+              <strong>Notify My Bank</strong>
             </div>
-            <p class="action-subtext">Generate formal notice to your bank manager demanding immediate account freeze under RBI guidelines.</p>
-            <button type="button" class="btn-unlocked-action" id="btn-download-bank-letter">
-              ✉️ Generate Bank Dispute Notice
+            <p class="action-subtext">Open a pre-filled urgent fraud report email to your bank demanding a lien or reversal under RBI guidelines.</p>
+            <button type="button" class="btn-unlocked-action" id="btn-action-notify-bank">
+              ✉️ Notify My Bank
+            </button>
+          </div>
+
+          <!-- Action 2: Call Cybercrime Helpline (1930) -->
+          <div class="action-card highlight-action-card">
+            <div class="action-header">
+              <span class="action-icon">📞</span>
+              <strong>Call Cybercrime Helpline (1930)</strong>
+            </div>
+            <p class="action-subtext">Dial India's national citizen financial cyber fraud reporting helpline managed by MHA (I4C).</p>
+            <button type="button" class="btn-unlocked-action btn-danger-action" id="btn-action-call-1930">
+              📞 Call 1930 Helpline
+            </button>
+          </div>
+
+          <!-- Action 3: Download Complaint PDF -->
+          <div class="action-card">
+            <div class="action-header">
+              <span class="action-icon">📄</span>
+              <strong>Download Complaint PDF</strong>
+            </div>
+            <p class="action-subtext">Download official, mobile-readable incident relief PDF complete with facts, transcript, and audit history.</p>
+            <button type="button" class="btn-unlocked-action" id="btn-action-download-pdf">
+              📥 Download Complaint PDF
+            </button>
+          </div>
+
+          <!-- Action 4: Copy Cybercrime Portal Filing Steps -->
+          <div class="action-card">
+            <div class="action-header">
+              <span class="action-icon">🌐</span>
+              <strong>Copy Cybercrime Portal Filing Steps</strong>
+            </div>
+            <p class="action-subtext">View step-by-step guidance and copy prepared non-sensitive incident particulars for cybercrime.gov.in.</p>
+            <button type="button" class="btn-unlocked-action" id="btn-action-view-portal-guide">
+              📋 Copy Filing Steps
+            </button>
+          </div>
+
+          <!-- Action 5: Simulated FIR (Demo Mode) -->
+          <div class="action-card demo-action-card">
+            <div class="action-header">
+              <span class="action-icon">🚔</span>
+              <strong>Simulated FIR (Demo Mode)</strong>
+            </div>
+            <div class="demo-card-badge">DEMO MODE — NOT AN OFFICIAL POLICE FIR</div>
+            <p class="action-subtext">Simulate a reporting workflow for project demonstration only. Does not contact police.</p>
+            <button type="button" class="btn-unlocked-action btn-demo-action" id="btn-action-fir-simulation">
+              ▶️ Run FIR Simulation
+            </button>
+          </div>
+
+          <!-- Action 6: Track Complaint Status -->
+          <div class="action-card">
+            <div class="action-header">
+              <span class="action-icon">🔍</span>
+              <strong>Track Complaint Status</strong>
+            </div>
+            <p class="action-subtext">View public complaint timeline, verification status, and national relief resources on the helpline tracker.</p>
+            <button type="button" class="btn-unlocked-action" id="btn-action-track-status">
+              🔍 Track Status (/helpline)
             </button>
           </div>
         </div>
@@ -450,6 +505,205 @@
       <div class="modal-footer">
         <button type="button" class="btn-modal-cancel" id="btn-dismiss-modal">Keep Complaint</button>
         <button type="button" class="btn-modal-danger" id="btn-confirm-cancel-dialog">Yes, Cancel Complaint</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 1: Notify My Bank Email Composer -->
+  <div class="modal-backdrop" id="modal-bank-email" style="display: none;">
+    <div class="modal-box modal-box-large">
+      <div class="modal-header">
+        <span class="modal-icon">🏦</span>
+        <h3 class="modal-title">Notify My Bank — Urgent Fraud Report</h3>
+      </div>
+      <div class="modal-body">
+        <p class="modal-instruction">
+          A pre-filled email draft has been prepared with your verified complaint facts. Opening the composer prepares the email; it will <strong>not be sent automatically</strong> until you review and tap send.
+        </p>
+
+        <div class="form-group" style="margin-top: 12px;">
+          <label for="bank-email-recipient">Bank Fraud Support Email (optional):</label>
+          <input 
+            type="email" 
+            id="bank-email-recipient" 
+            class="form-input" 
+            placeholder="e.g. nodal.officer@bank.com, or leave blank to choose in email app"
+          >
+          <small class="field-hint">If left empty, your email app will let you select your bank's address.</small>
+        </div>
+
+        <div class="email-preview-box" style="margin-top: 14px;">
+          <div class="email-preview-header">
+            <strong>Subject:</strong> <span id="bank-email-subject-preview">Urgent Fraud Report – Complaint SAI-XXXXXX</span>
+          </div>
+          <div class="email-preview-body">
+            <pre id="bank-email-body-preview" class="email-pre-text"></pre>
+          </div>
+        </div>
+
+        <div class="modal-alert-note" style="margin-top: 12px;">
+          🔒 <strong>Zero Credential Retention:</strong> No passwords, OTPs, ATM/UPI PINs, or CVVs are included in this communication.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-cancel" id="btn-close-bank-modal">Close</button>
+        <button type="button" class="btn-modal-primary" id="btn-launch-email-client">Open Email Composer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Call 1930 Helpline Confirmation -->
+  <div class="modal-backdrop" id="modal-call-1930" style="display: none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-icon">📞</span>
+        <h3 class="modal-title">Call National Cybercrime Helpline 1930</h3>
+      </div>
+      <div class="modal-body">
+        <p>
+          <strong>1930</strong> is India's official National Cyber Financial Fraud Helpline operated by the Ministry of Home Affairs (I4C).
+        </p>
+        <div class="helpline-advice-box" style="margin-top: 12px;">
+          <ul>
+            <li><strong>Immediate Golden Hour:</strong> Reporting within 2–3 hours of unauthorized debit maximizes the chance of freezing funds in transit.</li>
+            <li><strong>Notify Bank Promptly:</strong> Always contact your bank's fraud support alongside calling 1930.</li>
+            <li><strong>Preserve Evidence:</strong> Keep SMS alerts, UPI transaction reference numbers, screenshots, and bank statements ready.</li>
+            <li><strong>Official Portal:</strong> You should also file a formal digital complaint on <a href="https://cybercrime.gov.in/" target="_blank" rel="noopener noreferrer">cybercrime.gov.in</a> when feasible.</li>
+          </ul>
+        </div>
+        <div class="desktop-fallback-note" style="margin-top: 12px;">
+          ℹ️ <strong>Desktop Note:</strong> If your browser or computer cannot place calls directly, please dial <strong>1930</strong> manually from your mobile telephone.
+        </div>
+        <small class="disclaimer-muted" style="display: block; margin-top: 8px;">
+          Tapping 'Call 1930' records your action in your Saathi AI timeline. Saathi AI cannot verify whether the telecommunication call connects.
+        </small>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-cancel" id="btn-close-call-modal">Cancel</button>
+        <a href="tel:1930" class="btn-modal-danger" id="btn-proceed-call-1930" style="text-decoration: none; text-align: center;">
+          📞 Place Call to 1930
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Cybercrime Portal Filing Guide -->
+  <div class="modal-backdrop" id="modal-portal-guide" style="display: none;">
+    <div class="modal-box modal-box-large">
+      <div class="modal-header">
+        <span class="modal-icon">🌐</span>
+        <h3 class="modal-title">How to File Your Complaint on the Official Cybercrime Portal</h3>
+      </div>
+      <div class="modal-body">
+        <div class="official-portal-banner">
+          <div>
+            <strong>Official Government Portal:</strong>
+            <a href="https://cybercrime.gov.in/" target="_blank" rel="noopener noreferrer" class="portal-link-highlight">
+              https://cybercrime.gov.in/ ↗
+            </a>
+          </div>
+          <small class="domain-warning">⚠️ Always verify the address bar displays <strong>.gov.in</strong> before entering personal credentials.</small>
+        </div>
+
+        <h4 style="margin: 16px 0 8px; color: var(--text-main);">7-Step Official Filing Guide:</h4>
+        <ol class="filing-steps-list">
+          <li><strong>Open the official portal:</strong> Go to <a href="https://cybercrime.gov.in/" target="_blank" rel="noopener noreferrer">cybercrime.gov.in</a> in a secure browser tab.</li>
+          <li><strong>Select the appropriate category:</strong> Choose <em>"Report Financial Fraud"</em> (Citizen Financial Cyber Fraud Reporting System).</li>
+          <li><strong>Registration / Authentication:</strong> Login with your name and mobile number via SMS OTP verification.</li>
+          <li><strong>Enter Incident Information:</strong> Enter the incident date, time, and incident category matching your Saathi AI verified summary.</li>
+          <li><strong>Enter Transaction Details:</strong> Fill in the beneficiary account / UPI handle, amount, and bank name.</li>
+          <li><strong>Upload Supporting Evidence:</strong> Attach bank statements, screenshots, and call logs as evidence.</li>
+          <li><strong>Submit and Save Acknowledgement:</strong> Review all entered data carefully, submit, and record your official government acknowledgement number.</li>
+        </ol>
+
+        <div class="reference-distinction-box" style="margin-top: 14px;">
+          ℹ️ <strong>Reference Number Distinction:</strong> Your Saathi AI case reference (<span id="guide-ref-code">SAI-XXXXXX</span>) is for your internal relief tracking. The government portal will generate its own distinct official complaint acknowledgement number.
+        </div>
+
+        <div class="copy-details-section" style="margin-top: 16px;">
+          <div class="copy-header-row">
+            <label><strong>Ready-to-Paste Filing Text:</strong></label>
+            <button type="button" class="btn-copy-small" id="btn-copy-portal-text">📋 Copy Filing Details</button>
+          </div>
+          <textarea id="portal-copy-textarea" class="form-input textarea-field" rows="6" readonly></textarea>
+          <span id="portal-copy-feedback" class="copy-feedback-msg" style="display: none;">✅ Copied to clipboard!</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-cancel" id="btn-close-portal-modal">Close</button>
+        <a href="https://cybercrime.gov.in/" target="_blank" rel="noopener noreferrer" class="btn-modal-primary" style="text-decoration: none;">
+          Open cybercrime.gov.in ↗
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: Simulated FIR (Demo Mode) -->
+  <div class="modal-backdrop" id="modal-fir-simulation" style="display: none;">
+    <div class="modal-box modal-box-large">
+      <div class="modal-header">
+        <span class="modal-icon">🚔</span>
+        <h3 class="modal-title">Simulated FIR (Demo Mode)</h3>
+      </div>
+      <div class="modal-body">
+        <!-- Persistent prominent DEMO banner -->
+        <div class="demo-persistent-banner">
+          <div class="demo-banner-title">DEMO MODE — NOT AN OFFICIAL POLICE FIR</div>
+          <p class="demo-banner-text">
+            This feature demonstrates an automated reporting workflow for educational and project evaluation purposes only.
+            <strong>It does not create a legally binding FIR, does not contact police authorities, and does not assign a government-issued FIR number.</strong>
+          </p>
+        </div>
+
+        <div class="simulation-controls" style="margin: 16px 0;">
+          <button type="button" class="btn-run-simulation" id="btn-run-fir-simulation">
+            ▶️ Run FIR Simulation
+          </button>
+          <small class="sim-hint">Click above to initiate the simulated mock workflow.</small>
+        </div>
+
+        <!-- Simulated Workflow Timeline -->
+        <div id="sim-timeline-box" class="sim-timeline-box" style="display: none;">
+          <h4 style="margin-bottom: 12px; color: var(--text-main);">Simulated Workflow Stages:</h4>
+          <div class="sim-steps-stack">
+            <div class="sim-step" id="sim-step-1">
+              <span class="sim-step-icon">⚪</span>
+              <div class="sim-step-content">
+                <strong>1. Demo request received</strong>
+                <p>Simulated reporting workflow initiated by user request.</p>
+                <small class="sim-timestamp" id="sim-time-1">—</small>
+              </div>
+            </div>
+            <div class="sim-step" id="sim-step-2">
+              <span class="sim-step-icon">⚪</span>
+              <div class="sim-step-content">
+                <strong>2. Complaint details reviewed in simulation</strong>
+                <p>Structured particulars checked against simulation criteria.</p>
+                <small class="sim-timestamp" id="sim-time-2">—</small>
+              </div>
+            </div>
+            <div class="sim-step" id="sim-step-3">
+              <span class="sim-step-icon">⚪</span>
+              <div class="sim-step-content">
+                <strong>3. Demo record generated</strong>
+                <p>Simulated reference trial record created with demo watermark.</p>
+                <small class="sim-timestamp" id="sim-time-3">—</small>
+              </div>
+            </div>
+            <div class="sim-step" id="sim-step-4">
+              <span class="sim-step-icon">⚪</span>
+              <div class="sim-step-content">
+                <strong>4. Demo process completed</strong>
+                <p>Simulation closed. (Zero external systems were contacted).</p>
+                <small class="sim-timestamp" id="sim-time-4">—</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-cancel" id="btn-close-sim-modal">Close Simulation</button>
       </div>
     </div>
   </div>

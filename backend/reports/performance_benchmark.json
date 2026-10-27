@@ -1,0 +1,100 @@
+{
+  "timestamp": "2026-10-27T00:28:36Z",
+  "hardware_environment": {
+    "os": "macOS-26.5-arm64-arm-64bit-Mach-O",
+    "processor": "arm",
+    "python_version": "3.14.7",
+    "whisper_model": "medium",
+    "whisper_device": "cpu",
+    "whisper_compute": "int8",
+    "ollama_model": "qwen3:8b"
+  },
+  "total_jobs_evaluated": 6,
+  "successful_jobs": 6,
+  "failed_jobs": 0,
+  "warning_threshold_seconds": 30.0,
+  "latencies_summary": {
+    "total_upload_to_summary": {
+      "median_p50_seconds": 29.494,
+      "p95_seconds": 85.793,
+      "max_seconds": 86.304
+    },
+    "transcription_median_p50_seconds": 15.535,
+    "translation_median_p50_seconds": 0.002,
+    "extraction_median_p50_seconds": 14.02
+  },
+  "individual_runs": [
+    {
+      "filename": "en_01_bank_impersonation.wav",
+      "status": "success",
+      "warning": true,
+      "validation_seconds": 0.0193,
+      "transcription_seconds": 18.724,
+      "translation_seconds": 0.0035,
+      "extraction_seconds": 13.9336,
+      "persistence_seconds": 0.023,
+      "total_latency_seconds": 32.7034,
+      "reference_number": "SAI-NGMYB4"
+    },
+    {
+      "filename": "en_02_kyc_freeze.wav",
+      "status": "success",
+      "warning": false,
+      "validation_seconds": 0.0496,
+      "transcription_seconds": 12.3461,
+      "translation_seconds": 0.0001,
+      "extraction_seconds": 13.8823,
+      "persistence_seconds": 0.0057,
+      "total_latency_seconds": 26.2838,
+      "reference_number": "SAI-SAF9SL"
+    },
+    {
+      "filename": "en_03_lottery_scam.wav",
+      "status": "success",
+      "warning": false,
+      "validation_seconds": 0.0125,
+      "transcription_seconds": 8.9041,
+      "translation_seconds": 0.0,
+      "extraction_seconds": 14.106,
+      "persistence_seconds": 0.0028,
+      "total_latency_seconds": 23.0254,
+      "reference_number": "SAI-P6R4P3"
+    },
+    {
+      "filename": "en_04_courier_fraud.wav",
+      "status": "success",
+      "warning": false,
+      "validation_seconds": 0.0131,
+      "transcription_seconds": 9.211,
+      "translation_seconds": 0.0001,
+      "extraction_seconds": 11.7847,
+      "persistence_seconds": 0.0018,
+      "total_latency_seconds": 21.0107,
+      "reference_number": "SAI-659D4U"
+    },
+    {
+      "filename": "hi_01_bank_otp.wav",
+      "status": "success",
+      "warning": true,
+      "validation_seconds": 0.0109,
+      "transcription_seconds": 35.8151,
+      "translation_seconds": 9.4095,
+      "extraction_seconds": 41.0513,
+      "persistence_seconds": 0.0175,
+      "total_latency_seconds": 86.3043,
+      "reference_number": "SAI-J5R6NU"
+    },
+    {
+      "filename": "hi_02_electricity_bill.wav",
+      "status": "success",
+      "warning": true,
+      "validation_seconds": 0.0388,
+      "transcription_seconds": 36.7925,
+      "translation_seconds": 8.808,
+      "extraction_seconds": 38.6108,
+      "persistence_seconds": 0.0089,
+      "total_latency_seconds": 84.259,
+      "reference_number": "SAI-38PLX3"
+    }
+  ]
+}

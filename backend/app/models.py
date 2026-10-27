@@ -106,12 +106,15 @@ class ComplaintStatusHistory(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     complaint_id = Column(Integer, ForeignKey("complaints.id", ondelete="CASCADE"), index=True, nullable=False)
     status = Column(String(32), nullable=False)
+    action_type = Column(String(32), nullable=True)  # e.g., notify_bank, call_1930, download_pdf, copy_filing_guide, fir_simulation, view_status
+    is_demo = Column(Boolean, nullable=False, default=False)
     note = Column(Text, nullable=True)
+    extra_data = Column(Text, nullable=True)  # Sanitized JSON metadata (never raw credentials)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     complaint = relationship("Complaint", back_populates="history")
 
     def __repr__(self) -> str:
-        return f"<ComplaintStatusHistory(complaint_id={self.complaint_id}, status='{self.status}', created_at='{self.created_at}')>"
+        return f"<ComplaintStatusHistory(complaint_id={self.complaint_id}, status='{self.status}', action='{self.action_type}', demo={self.is_demo})>"
 
 

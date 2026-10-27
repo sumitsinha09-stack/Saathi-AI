@@ -86,6 +86,9 @@ class RedactionService:
 
         return redacted
 
+    # Convenient alias
+    redact_sensitive_text = redact_text
+
     @classmethod
     def redact_incident(cls, incident: Incident) -> Incident:
         """

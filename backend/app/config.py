@@ -52,6 +52,25 @@ class Settings(BaseSettings):
     MAX_AUDIO_SIZE_BYTES: int = Field(default=5 * 1024 * 1024)  # 5 MB
     MAX_AUDIO_DURATION_SECONDS: float = Field(default=120.0)    # 2 minutes (120s)
     VOICE_RETENTION_HOURS: int = Field(default=24)              # 24h temporary storage
+    MAX_CONCURRENT_TRANSCRIPTIONS: int = Field(default=2)       # Guard against resource exhaustion
+
+    # Rate Limiting Configuration (Phase 7 Security Hardening)
+    RATE_LIMIT_VOICE_UPLOAD: str = Field(default="15/minute")
+    RATE_LIMIT_VOICE_STATUS: str = Field(default="180/minute")
+    RATE_LIMIT_VOICE_TRANSLATE: str = Field(default="30/minute")
+    RATE_LIMIT_COMPLAINT_READ: str = Field(default="120/minute")
+    RATE_LIMIT_COMPLAINT_WRITE: str = Field(default="30/minute")
+    RATE_LIMIT_COMPLAINT_CONFIRM: str = Field(default="15/minute")
+    RATE_LIMIT_ACTIONS: str = Field(default="45/minute")
+    RATE_LIMIT_PUBLIC_LOOKUP: str = Field(default="10/minute")
+    TRUSTED_PROXIES: str = Field(default="")  # Comma-separated list of trusted proxy IPs
+
+    # Transcript & Complaint Retention Policy (Phase 7)
+    TRANSCRIPT_RETENTION_HOURS: int = Field(default=24)
+    UNCONFIRMED_COMPLAINT_RETENTION_HOURS: int = Field(default=24)
+    CANCELLED_COMPLAINT_RETENTION_HOURS: int = Field(default=48)
+    CONFIRMED_COMPLAINT_RETENTION_DAYS: int = Field(default=30)
+    ABANDONED_AUDIO_CLEANUP_HOURS: int = Field(default=1)
 
     @property
     def effective_app_secret(self) -> str:

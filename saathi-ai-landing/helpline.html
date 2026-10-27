@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complaint Status Tracker & Helpline — Saathi AI</title>
+  <meta name="description" content="Track your Saathi AI cybercrime complaint status and access national cyber fraud helpline resources.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/helpline.css">
+</head>
+<body>
+  <!-- Navigation Header -->
+  <header class="helpline-header">
+    <div class="header-container">
+      <div class="brand-group">
+        <a href="/" class="brand-link" title="Return to Saathi AI Home">
+          <span class="brand-shield">🛡️</span>
+          <span class="brand-name">Saathi AI</span>
+        </a>
+        <span class="header-divider">/</span>
+        <span class="page-title-badge">Helpline & Status Tracker</span>
+      </div>
+      <div class="header-actions">
+        <a href="tel:1930" class="btn-helpline-quick" title="Call National Cybercrime Helpline 1930">
+          <span class="quick-icon">📞</span>
+          <span class="quick-text">Call 1930</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="helpline-main">
+    <div class="content-container">
+
+      <!-- Hero Section -->
+      <section class="hero-section">
+        <h1 class="hero-title">Track Complaint Status</h1>
+        <p class="hero-subtext">
+          Enter your Saathi AI reference number (e.g. <code>SAI-XXXXXX</code>) to check the verified status of your complaint and view immediate relief guidance.
+        </p>
+
+        <!-- Search Form -->
+        <form id="lookup-form" class="lookup-form" novalidate>
+          <div class="search-input-wrapper">
+            <span class="search-icon">🔍</span>
+            <input 
+              type="text" 
+              id="ref-input" 
+              class="ref-input" 
+              placeholder="e.g. SAI-AB1234" 
+              maxlength="10"
+              autocomplete="off"
+              spellcheck="false"
+              required
+            >
+            <button type="submit" id="btn-track" class="btn-track">
+              Track Status
+            </button>
+          </div>
+          <small class="search-hint">Reference numbers are case-insensitive and formatted as SAI followed by 6 characters.</small>
+        </form>
+      </section>
+
+      <!-- Alert / Status Notice -->
+      <div id="status-alert" class="status-alert" style="display: none;">
+        <span id="alert-icon" class="alert-icon">ℹ️</span>
+        <span id="alert-message" class="alert-message"></span>
+      </div>
+
+      <!-- Loading State -->
+      <div id="lookup-loading" class="lookup-loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Querying verified complaint records...</p>
+      </div>
+
+      <!-- Results Card -->
+      <section id="results-card" class="results-card" style="display: none;">
+        <div class="card-header-row">
+          <div>
+            <span class="label-tiny">Complaint Reference</span>
+            <h2 id="result-ref" class="result-ref-title">SAI-XXXXXX</h2>
+          </div>
+          <div class="status-badge-container">
+            <span id="result-status-pill" class="status-pill">Awaiting Review</span>
+          </div>
+        </div>
+
+        <div class="dates-meta-grid">
+          <div class="meta-item">
+            <span class="meta-label">Filed On:</span>
+            <strong id="result-created" class="meta-value">—</strong>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Confirmed On:</span>
+            <strong id="result-confirmed" class="meta-value">—</strong>
+          </div>
+        </div>
+
+        <!-- Timeline Section -->
+        <div class="timeline-section">
+          <h3 class="section-title">Verified Status Timeline</h3>
+          <div id="timeline-list" class="timeline-list">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- Privacy Assurance Banner -->
+        <div class="privacy-notice-box">
+          <span class="lock-icon">🔒</span>
+          <div>
+            <strong>Citizen Privacy Safeguard:</strong>
+            <p>Detailed victim statements, financial figures, and dispute documents are protected and accessible only through your confidential private review link.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Immediate Emergency Relief Cards -->
+      <section class="relief-cards-section">
+        <h2 class="relief-title">Next Steps: Protect Yourself & Report Financial Cyber Fraud</h2>
+        <div class="relief-grid">
+
+          <!-- 1. Bank Action -->
+          <div class="relief-card">
+            <div class="relief-card-header">
+              <span class="card-icon">🏦</span>
+              <h3>1. Notify Your Bank Immediately</h3>
+            </div>
+            <p>
+              Under RBI Zero-Liability Guidelines, immediately call your bank's 24x7 fraud customer care to block the debit card/UPI handle and request an immediate hold on the beneficiary account.
+            </p>
+            <div class="relief-card-footer">
+              <span class="tip-badge">💡 Golden Hour: Report within 2-3 hours for highest recovery chance.</span>
+            </div>
+          </div>
+
+          <!-- 2. Helpline 1930 -->
+          <div class="relief-card highlight-card">
+            <div class="relief-card-header">
+              <span class="card-icon">📞</span>
+              <h3>2. Call Cybercrime Helpline 1930</h3>
+            </div>
+            <p>
+              Dial <strong>1930</strong> (formerly 155260), India's national citizen financial cyber fraud reporting helpline managed by the Ministry of Home Affairs (I4C).
+            </p>
+            <div class="relief-card-footer">
+              <a href="tel:1930" class="btn-card-call">
+                📞 Call 1930 Now
+              </a>
+              <small class="call-note">Toll-free across all Indian telecom operators</small>
+            </div>
+          </div>
+
+          <!-- 3. National Portal -->
+          <div class="relief-card">
+            <div class="relief-card-header">
+              <span class="card-icon">🌐</span>
+              <h3>3. File on cybercrime.gov.in</h3>
+            </div>
+            <p>
+              Submit your formal digital complaint on the official National Cyber Crime Reporting Portal. Prepare your transaction SMS, UPI IDs, and bank statement.
+            </p>
+            <div class="relief-card-footer">
+              <a href="https://cybercrime.gov.in/" target="_blank" rel="noopener noreferrer" class="btn-card-portal">
+                Visit cybercrime.gov.in ↗
+              </a>
+              <small class="domain-note">Always verify the official <strong>.gov.in</strong> domain.</small>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="helpline-footer">
+    <div class="footer-container">
+      <p>Saathi AI — Citizen Emergency Cybercrime Relief & AI Assistance Platform</p>
+      <small>Note: Saathi AI is an independent civic technology platform and is not a government agency or police department.</small>
+    </div>
+  </footer>
+
+  <script src="/helpline.js"></script>
+</body>
+</html>

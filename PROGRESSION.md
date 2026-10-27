@@ -15,12 +15,92 @@
 | **Phase 3.5** | **Automatic Transcription & Optional English Translation** | ✅ **Completed** | 2026-10-26 |
 | **Phase 4** | **AI-Powered Complaint Extraction & Storage (Qwen3, Redaction)** | ✅ **Completed** | 2026-10-26 |
 | **Phase 5** | **Complaint Review, Editing, and Confirmation (`/c/[token]`)** | ✅ **Completed** | 2026-10-26 |
-| **Phase 6** | **Automated Relief Actions (Bank Dispute Email, PDF, 1930, FIR)** | ⏳ *Pending* | Upcoming |
-| **Phase 7** | **Next.js Portal & Live Status Timeline** | ⏳ *Pending* | Upcoming |
+| **Phase 6** | **Automated Relief Actions (Bank Dispute Email, PDF, 1930, FIR)** | ✅ **Completed** | 2026-10-27 |
+| **Phase 7** | **Security Hardening, E2E Testing, Benchmarking & Demo Prep** | ✅ **Completed** | 2026-10-27 |
 
 ---
 
 ## 📝 Phase-by-Phase Detailed Changelog
+
+### Phase 7: Security Hardening, End-to-End Testing, Performance Evaluation & Demo Prep (Completed: 2026-10-27)
+
+#### 1. Security Hardening
+- **Sliding-Window Rate Limiting (`RateLimiter`)**: Configured limits across all sensitive endpoints (`/api/voice`, `/api/voice/status/{token}`, `/api/voice/translate`, complaint edit/confirm/cancel, relief actions, `/helpline` lookup). Returns HTTP 429 with `Retry-After`. Resolves client IPs safely ignoring spoofable headers unless connected via trusted proxies.
+- **Strict Audio Validation Pipeline (`StrictAudioValidator`)**: Strict 5MB size limit, 120s duration limit, magic byte validation (WebM, Ogg, MP3, WAV, M4A), PyAV container and audio frame decoding verification, decompression bomb protection, path traversal mitigation, and concurrency throttle semaphore (`MAX_CONCURRENT_TRANSCRIPTIONS = 2`).
+- **Sensitive Credential Protection (`RedactionService`)**: Masking of OTPs, PINs, CVVs, passwords, full card numbers without destroying legitimate dates, amounts, phone numbers, or reference IDs. Sanitised logging across all error handlers.
+- **Retention & Automated Cleanup (`RetentionService`)**: Zero-retention audio deletion upon completion/failure, abandoned audio purge (>1h), unconfirmed transcript cleanup (>24h), and confirmed complaint retention (30 days). Standalone runner `backend/scripts/run_cleanup.py`.
+
+#### 2. Synthetic Dataset & Benchmarking
+- **20 Synthetic Voice Notes (`backend/tests/fixtures/voice_notes/`)**: 4 English, 4 Hindi, 4 Tamil, 2 Accent variations, 2 Background noise, 1 Silent, 1 Too long, 2 Malformed/Corrupted with `manifest.json` and generator script.
+- **Faster-Whisper Transcription Benchmark**: 100% language detection accuracy across all valid speech; English WER 16.1% / CER 4.0%; Tamil WER 16.5% / CER 14.1%; Hindi WER 27.4% / CER 19.5% (`backend/reports/transcription_benchmark.md`).
+- **Qwen3 Extraction & Invented Facts Benchmark**: 16/16 extractions succeeded on attempt 1 (0 fallbacks). Transparently documented 7 detected fact/entity discrepancies and redaction checks (`backend/reports/extraction_accuracy_report.md`).
+- **Pipeline Processing Performance**: P50 total turnaround latency 29.49s; P95 85.79s; individual stage breakdowns for validation, Whisper transcription, translation, Qwen3 extraction, and DB persistence (`backend/reports/performance_benchmark.md`).
+
+#### 3. Automated End-to-End Testing & Reliability
+- Complete end-to-end suite (`backend/tests/test_phase7_end_to_end.py`) with 9 comprehensive tests; all 84 test suite cases pass cleanly.
+- Verified two consecutive live workflow executions without application errors.
+
+#### 4. Demo Preparation & Verification
+- Comprehensive 5–7 min demo script (`DEMO_SCRIPT.md`).
+- Pre-flight readiness checklist & recovery procedures (`DEMO_READINESS.md`).
+- Pre-flight health check script (`backend/scripts/demo_health_check.py`).
+- Clear classification of real vs simulated outcomes (`FEATURE_CLASSIFICATION.md`).
+- Backup demo video artifact (`demo_assets/saathi_ai_demo_backup.webp`) and manual recording procedure (`DEMO_RECORDING_PROCEDURE.md`).
+
+### Phase 6: Automated Relief Actions & Public Helpline (Completed: 2026-10-27)
+
+#### 1. Post-Confirmation Relief Actions Section
+- Integrated **Next Steps: Protect Yourself and Report the Incident** on the review page at `/c/[token]`.
+- Enforces strict backend validation: all six reporting actions remain disabled/locked while the complaint is in `processing` or `awaiting_review`.
+- Cancelled complaints are permanently barred from reporting actions.
+- Prominently displays the verified complaint reference number (`SAI-XXXXXX`) in the confirmation banner.
+
+#### 2. The Six Post-Confirmation Relief Actions
+1. **Notify My Bank (`notify_bank`)**:
+   - Opens pre-filled email draft via `mailto:` with subject `Urgent Fraud Report – Complaint [REF]`.
+   - Incorporates complaint reference, known incident date/time, verified loss amount & currency, verified summary, request for beneficiary account freeze under RBI guidelines, and placeholders for missing details.
+   - Explains that launching the composer creates a draft and does not automatically send the email.
+   - Automatically records the action event via backend endpoint `POST /api/complaints/{token}/actions/notify_bank`.
+2. **Call Cybercrime Helpline 1930 (`call_1930`)**:
+   - Prominent mobile-ready `tel:1930` dialer action with confirmation prompt.
+   - Clarifies 1930 role, urgent golden hour reporting window, and advice to contact bank and preserve evidence.
+   - Desktop browser fallback advising users to dial 1930 directly from their phone dialer.
+   - Records action via backend `POST /api/complaints/{token}/actions/call_1930` without claiming call connection status.
+3. **Download Complaint PDF (`download_pdf`)**:
+   - Built server-side ReportLab PDF generation service (`PDFService.generate_complaint_pdf`).
+   - Downloads formal, mobile-readable PDF (`SAI-XXXXXX-complaint.pdf`) with Saathi AI branding, reference number, timestamps, structured particulars, native transcript (supporting Unicode Indic text), audit history, and citizen legal advisory.
+   - Explicit disclaimer stating the document is a user-generated incident summary and NOT an official Police FIR.
+   - Automatically records `download_pdf` action upon download.
+4. **Copy Cybercrime Portal Filing Steps (`copy_filing_guide`)**:
+   - Concise 7-step guide for filing on the official Indian cybercrime reporting portal (`https://cybercrime.gov.in/`).
+   - Direct link to open portal in separate tab with domain verification advisory (`.gov.in`).
+   - One-click *Copy Filing Details* button copying prepared, credential-redacted incident text.
+   - Distinguishes internal Saathi AI reference number from official government acknowledgement numbers.
+   - Records action via backend `POST /api/complaints/{token}/actions/copy_filing_guide`.
+5. **Simulated FIR — Demo Mode Only (`fir_simulation`)**:
+   - Persistent prominent banner: `DEMO MODE — NOT AN OFFICIAL POLICE FIR`.
+   - Explains the simulation is for educational demonstration only and does NOT contact police or generate legal records.
+   - Interactive multi-stage simulation with timestamps:
+     - Stage 1: Demo request received
+     - Stage 2: Complaint details reviewed in simulation
+     - Stage 3: Demo record generated
+     - Stage 4: Demo process completed
+   - All events tagged explicitly with `is_demo=True` in database audit history.
+6. **Track Complaint Status (`view_status`)**:
+   - Opens `/helpline?ref=SAI-XXXXXX` in a new tab.
+   - Records action via backend `POST /api/complaints/{token}/actions/view_status`.
+
+#### 3. Public Complaint Lookup & Helpline Page (`/helpline`)
+- Mobile-friendly public tracker at `/helpline` (`helpline.html`, `helpline.css`, `helpline.js`).
+- Protected public API endpoint: `GET /api/complaints/public-lookup/{reference_number}`.
+- Strict privacy: only returns minimal public status (`reference_number`, `status`, `created_at`, `confirmed_at`, filtered public timeline, and relief guidance).
+- Strictly prevents disclosure of private victim statements, loss figures, phone numbers, or access tokens.
+- Protected by sliding-window IP rate limiting (10 requests/minute) and generic 404 responses to prevent enumeration.
+
+#### 4. Backend Action Tracking & Idempotency
+- Added `action_type`, `is_demo`, and `extra_data` columns to `ComplaintStatusHistory` with automatic database migration.
+- Deduplication window prevents accidental duplicate history events from rapid successive clicks.
+- Comprehensive automated test suite (`backend/tests/test_phase6_relief_actions.py`) covering all 6 actions, security gates, PDF generation, and public tracker privacy.
 
 ### Phase 5: Complaint Review, Editing, and Confirmation (Completed: 2026-10-26)
 

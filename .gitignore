@@ -30,6 +30,8 @@ build/
 *.m4a
 *.aac
 !backend/tests/test_data/**
+!backend/tests/fixtures/**
+!demo_assets/**
 media_temp/
 uploads/
 storage/

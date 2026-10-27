@@ -327,6 +327,8 @@ class ComplaintService:
                         {
                             "id": ev.id,
                             "status": ev.status,
+                            "action_type": getattr(ev, "action_type", None),
+                            "is_demo": bool(getattr(ev, "is_demo", False)),
                             "note": ev.note,
                             "created_at": ev.created_at.isoformat() if ev.created_at else None,
                         }
@@ -941,4 +943,240 @@ class ComplaintService:
             "status": "cancelled",
             "cancelled_at": now.isoformat(),
             "message": "Complaint has been cancelled successfully.",
+        }
+
+    # Supported Phase 6 relief actions allowlist
+    SUPPORTED_ACTIONS = {
+        "notify_bank",
+        "call_1930",
+        "download_pdf",
+        "copy_filing_guide",
+        "fir_simulation",
+        "view_status",
+    }
+
+    @classmethod
+    async def record_action_by_token(
+        cls,
+        token: str,
+        action: str,
+        metadata: Optional[Dict[str, Any]] = None,
+        db: Optional[AsyncSession] = None,
+    ) -> Dict[str, Any]:
+        """
+        Records an authorized post-confirmation relief action.
+        - Strictly validates action identifier against allowlist.
+        - Validates token authenticity and expiration.
+        - Verifies that complaint is 'confirmed' (rejects unconfirmed or cancelled).
+        - Prevents duplicate event spam from rapid repeated clicks (deduplication window).
+        - Marks demo events explicitly (is_demo=True) without altering real complaint state.
+        - Never stores credentials or raw tokens in metadata.
+        """
+        import json
+
+        clean_action = (action or "").strip().lower()
+        if clean_action not in cls.SUPPORTED_ACTIONS:
+            raise ValueError(
+                f"Unsupported action '{action}'. Permitted actions: {', '.join(sorted(cls.SUPPORTED_ACTIONS))}"
+            )
+
+        complaint_obj, is_mem = await cls.find_complaint_record(token, db=db)
+        if not complaint_obj:
+            raise KeyError("Complaint not found for provided token.")
+
+        c_dict = cls._model_to_dict(complaint_obj) if not is_mem else complaint_obj
+        if cls.is_expired(c_dict.get("expires_at")):
+            raise PermissionError("Complaint access token has expired.")
+
+        current_status = (c_dict.get("status") or "").lower()
+        ref = c_dict.get("reference_number")
+
+        if current_status == "cancelled":
+            raise ValueError("Cancelled complaints are permanently ineligible for reporting actions.")
+
+        if current_status != "confirmed":
+            raise ValueError(
+                f"Reporting actions are locked until the complaint is confirmed. Current status: '{c_dict.get('status')}'."
+            )
+
+        now = datetime.now(timezone.utc)
+        sanitized_meta = {}
+        if metadata and isinstance(metadata, dict):
+            for k, v in metadata.items():
+                if k in ("token", "access_token", "token_hash", "password", "otp", "pin", "cvv", "card"):
+                    continue
+                if isinstance(v, str):
+                    sanitized_meta[k] = RedactionService.redact_text(v)
+                elif isinstance(v, (int, float, bool)):
+                    sanitized_meta[k] = v
+
+        extra_data_str = json.dumps(sanitized_meta) if sanitized_meta else None
+
+        # Check deduplication in in-memory history (or DB)
+        if ref in _in_memory_history:
+            recent_events = _in_memory_history[ref]
+            if recent_events:
+                last_ev = recent_events[-1]
+                if last_ev.get("action_type") == clean_action and clean_action != "fir_simulation":
+                    try:
+                        last_ts = datetime.fromisoformat(last_ev["created_at"].replace("Z", "+00:00"))
+                        if (now - last_ts).total_seconds() < 3.0:
+                            logger.info(f"Deduplicating rapid repeat action '{clean_action}' for complaint {ref}.")
+                            return {
+                                "success": True,
+                                "reference_number": ref,
+                                "action": clean_action,
+                                "recorded_at": last_ev["created_at"],
+                                "message": f"Action '{clean_action}' was recently recorded.",
+                            }
+                    except Exception:
+                        pass
+
+        # Prepare audit events
+        events_to_record: List[Dict[str, Any]] = []
+
+        if clean_action == "fir_simulation":
+            # Multi-step simulated DEMO workflow
+            demo_steps = [
+                "Demo request received: Simulated FIR demonstration workflow initiated.",
+                "Complaint details reviewed in simulation: Incident parameters checked in demo mode.",
+                "Demo record generated: Simulation reference record established.",
+                "Demo process completed: Demonstration completed. Note: No official FIR was created or sent to law enforcement.",
+            ]
+            for step_note in demo_steps:
+                events_to_record.append({
+                    "status": "confirmed",
+                    "action_type": "fir_simulation",
+                    "is_demo": True,
+                    "note": step_note,
+                    "extra_data": extra_data_str,
+                    "created_at": now,
+                })
+        else:
+            action_descriptions = {
+                "notify_bank": "Victim initiated bank fraud report email draft.",
+                "call_1930": "Victim initiated call to National Cybercrime Helpline 1930.",
+                "download_pdf": "Victim downloaded official Saathi AI complaint summary PDF.",
+                "copy_filing_guide": "Victim copied cybercrime portal filing guide details.",
+                "view_status": "Victim accessed complaint status tracker.",
+            }
+            events_to_record.append({
+                "status": "confirmed",
+                "action_type": clean_action,
+                "is_demo": False,
+                "note": action_descriptions.get(clean_action, f"Initiated relief action: {clean_action}"),
+                "extra_data": extra_data_str,
+                "created_at": now,
+            })
+
+        # Persist events
+        if not is_mem and db is not None:
+            try:
+                for ev in events_to_record:
+                    hist_entry = ComplaintStatusHistory(
+                        complaint_id=complaint_obj.id,
+                        status=ev["status"],
+                        action_type=ev["action_type"],
+                        is_demo=ev["is_demo"],
+                        note=ev["note"],
+                        extra_data=ev["extra_data"],
+                        created_at=ev["created_at"],
+                    )
+                    db.add(hist_entry)
+                await db.commit()
+            except Exception as e:
+                logger.error(f"Failed to record action in DB: {e}")
+                await db.rollback()
+                raise e
+
+        # Update in-memory history cache
+        if ref not in _in_memory_history:
+            _in_memory_history[ref] = []
+        for ev in events_to_record:
+            _in_memory_history[ref].append({
+                "status": ev["status"],
+                "action_type": ev["action_type"],
+                "is_demo": ev["is_demo"],
+                "note": ev["note"],
+                "created_at": ev["created_at"].isoformat() if hasattr(ev["created_at"], "isoformat") else str(ev["created_at"]),
+            })
+
+        logger.info(f"Action '{clean_action}' successfully recorded for complaint {ref} (demo={clean_action == 'fir_simulation'}).")
+        return {
+            "success": True,
+            "reference_number": ref,
+            "action": clean_action,
+            "recorded_at": now.isoformat(),
+            "message": f"Action '{clean_action}' initiated and recorded.",
+        }
+
+    @classmethod
+    async def get_public_helpline_status(
+        cls,
+        reference_number: str,
+        db: Optional[AsyncSession] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Public unauthenticated status retrieval for the /helpline page.
+        - Validates reference number format strictly.
+        - Returns MINIMAL permitted status and timeline information ONLY.
+        - Strictly safeguards private details: DOES NOT expose victim narratives,
+          unredacted transcripts, financial losses, phone numbers, or tokens.
+        - Distinguishes simulated demo events from actual verification events.
+        """
+        import re
+
+        clean_ref = (reference_number or "").strip().upper()
+        if not re.match(r"^SAI-[A-Z0-9]{6}$", clean_ref):
+            return None
+
+        # Look up complaint
+        complaint_dict = None
+        if db is not None:
+            try:
+                stmt = select(Complaint).where(Complaint.reference_number == clean_ref)
+                res = await db.execute(stmt)
+                rec = res.scalar_one_or_none()
+                if rec:
+                    complaint_dict = cls._model_to_dict(rec)
+            except Exception as e:
+                logger.debug(f"DB lookup in get_public_helpline_status failed: {e}")
+
+        if not complaint_dict and clean_ref in _in_memory_complaints:
+            complaint_dict = _in_memory_complaints[clean_ref]
+
+        if not complaint_dict:
+            return None
+
+        # Retrieve history
+        raw_history = await cls.get_complaint_history(
+            reference_number=clean_ref,
+            access_token=complaint_dict.get("access_token") or complaint_dict.get("upload_token"),
+            db=db,
+        )
+
+        public_timeline = []
+        if raw_history:
+            for item in raw_history:
+                # Sanitize notes for public display
+                is_demo = bool(item.get("is_demo", False))
+                public_timeline.append({
+                    "status": item.get("status"),
+                    "action_type": item.get("action_type"),
+                    "is_demo": is_demo,
+                    "note": item.get("note"),
+                    "created_at": item.get("created_at"),
+                })
+
+        return {
+            "reference_number": clean_ref,
+            "status": complaint_dict.get("status"),
+            "created_at": complaint_dict.get("created_at"),
+            "confirmed_at": complaint_dict.get("confirmed_at"),
+            "timeline": public_timeline,
+            "relief_guidance": {
+                "bank": "Immediately inform your bank's 24x7 fraud support to freeze the beneficiary account or transaction under RBI guidelines.",
+                "helpline_1930": "Call 1930 promptly to report financial cyber fraud to the Indian Cybercrime Coordination Centre (I4C).",
+                "cybercrime_portal": "File a formal incident report on the official Indian cybercrime reporting portal: https://cybercrime.gov.in/",
+            },
         }

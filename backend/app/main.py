@@ -110,6 +110,25 @@ async def review_css() -> FileResponse:
     return FileResponse(os.path.join(LANDING_DIR, "review.css"), media_type="text/css")
 
 
+@app.get("/helpline", include_in_schema=False)
+async def helpline_page() -> FileResponse:
+    """Serves the mobile-friendly Complaint Lookup and Helpline Status page."""
+    helpline_file = os.path.join(LANDING_DIR, "helpline.html")
+    if not os.path.exists(helpline_file):
+        return FileResponse(os.path.join(LANDING_DIR, "index.html"))
+    return FileResponse(helpline_file)
+
+
+@app.api_route("/helpline.js", methods=["GET", "HEAD"], include_in_schema=False)
+async def helpline_js() -> FileResponse:
+    return FileResponse(os.path.join(LANDING_DIR, "helpline.js"), media_type="application/javascript")
+
+
+@app.api_route("/helpline.css", methods=["GET", "HEAD"], include_in_schema=False)
+async def helpline_css() -> FileResponse:
+    return FileResponse(os.path.join(LANDING_DIR, "helpline.css"), media_type="text/css")
+
+
 
 
 @app.get("/health", tags=["Monitoring"])
