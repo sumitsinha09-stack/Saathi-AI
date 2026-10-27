@@ -19,12 +19,13 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = Field(default="qwen3:8b")
 
     # Faster-Whisper Local Speech-to-Text
-    WHISPER_MODEL_SIZE: str = Field(default="medium")  # medium by default, supports large-v3
+    WHISPER_MODEL_SIZE: str = Field(default="small")  # small for fast responsive local inference; supports medium, large-v3
     WHISPER_DEVICE: str = Field(default="cpu")
     WHISPER_COMPUTE_TYPE: str = Field(default="int8")
-    WHISPER_BEAM_SIZE: int = Field(default=5)
+    WHISPER_BEAM_SIZE: int = Field(default=1)         # beam_size=1 gives 3-5x faster decoding with high accuracy
     WHISPER_VAD_FILTER: bool = Field(default=True)
     WHISPER_FALLBACK_MODEL_SIZE: str = Field(default="tiny")
+    WHISPER_CPU_THREADS: int = Field(default=4)
 
     # Local Translation Configuration
     TRANSLATION_MODEL: str = Field(default="qwen2.5:3b")
@@ -32,9 +33,9 @@ class Settings(BaseSettings):
     TRANSLATION_TIMEOUT_SECONDS: float = Field(default=30.0)
 
     # Complaint Extraction Configuration (Phase 4)
-    EXTRACTION_MODEL: str = Field(default="qwen3:4b")
-    EXTRACTION_TIMEOUT_SECONDS: float = Field(default=45.0)
-    EXTRACTION_MAX_RETRIES: int = Field(default=3)
+    EXTRACTION_MODEL: str = Field(default="qwen2.5:3b")
+    EXTRACTION_TIMEOUT_SECONDS: float = Field(default=20.0)
+    EXTRACTION_MAX_RETRIES: int = Field(default=2)
     COMPLAINT_TOKEN_EXPIRY_HOURS: int = Field(default=24)
 
 

@@ -26,6 +26,10 @@ async def lifespan(app: FastAPI):
     await init_db()
     # Ensure voice upload directory exists
     os.makedirs(settings.VOICE_UPLOAD_DIR, exist_ok=True)
+    # Pre-warm Faster-Whisper model in background thread
+    from backend.app.services.transcription_service import TranscriptionService
+    import asyncio
+    asyncio.create_task(asyncio.to_thread(TranscriptionService.get_model))
     yield
     # Shutdown
     if engine is not None:
@@ -82,12 +86,20 @@ async def root(request: Request) -> Any:
 
 @app.api_route("/styles.css", methods=["GET", "HEAD"], include_in_schema=False)
 async def styles_css() -> FileResponse:
-    return FileResponse(os.path.join(LANDING_DIR, "styles.css"), media_type="text/css")
+    return FileResponse(
+        os.path.join(LANDING_DIR, "styles.css"),
+        media_type="text/css",
+        headers={"Cache-Control": "no-cache, must-revalidate"}
+    )
 
 
 @app.api_route("/script.js", methods=["GET", "HEAD"], include_in_schema=False)
 async def script_js() -> FileResponse:
-    return FileResponse(os.path.join(LANDING_DIR, "script.js"), media_type="application/javascript")
+    return FileResponse(
+        os.path.join(LANDING_DIR, "script.js"),
+        media_type="application/javascript",
+        headers={"Cache-Control": "no-cache, must-revalidate"}
+    )
 
 
 @app.get("/c/{token}", include_in_schema=False)
@@ -127,6 +139,19 @@ async def helpline_js() -> FileResponse:
 @app.api_route("/helpline.css", methods=["GET", "HEAD"], include_in_schema=False)
 async def helpline_css() -> FileResponse:
     return FileResponse(os.path.join(LANDING_DIR, "helpline.css"), media_type="text/css")
+
+
+@app.api_route("/samples/{filename}", methods=["GET", "HEAD"], include_in_schema=False)
+async def sample_audio(filename: str) -> FileResponse:
+    candidate_paths = [
+        os.path.join(LANDING_DIR, "samples", filename),
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "tests", "test_data", "synthetic_scams", filename)),
+    ]
+    for sample_path in candidate_paths:
+        if os.path.exists(sample_path) and (filename.endswith(".wav") or filename.endswith(".webm") or filename.endswith(".mp3")):
+            return FileResponse(sample_path, media_type="audio/wav")
+    return JSONResponse(status_code=404, content={"detail": "Sample not found"})
+
 
 
 

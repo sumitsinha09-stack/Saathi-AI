@@ -83,14 +83,16 @@ class TranscriptionService:
                 f"device='{settings.WHISPER_DEVICE}', compute_type='{settings.WHISPER_COMPUTE_TYPE}'"
             )
 
+            cpu_threads = getattr(settings, "WHISPER_CPU_THREADS", 4)
             try:
                 cls._model = WhisperModel(
                     requested_size,
                     device=settings.WHISPER_DEVICE,
                     compute_type=settings.WHISPER_COMPUTE_TYPE,
+                    cpu_threads=cpu_threads,
                 )
                 cls._loaded_model_size = requested_size
-                logger.info(f"Faster-Whisper '{requested_size}' model loaded successfully.")
+                logger.info(f"Faster-Whisper '{requested_size}' model loaded successfully (threads={cpu_threads}).")
                 return cls._model
             except Exception as e:
                 logger.warning(
@@ -104,6 +106,7 @@ class TranscriptionService:
                         settings.WHISPER_FALLBACK_MODEL_SIZE,
                         device=settings.WHISPER_DEVICE,
                         compute_type=settings.WHISPER_COMPUTE_TYPE,
+                        cpu_threads=cpu_threads,
                     )
                     cls._loaded_model_size = settings.WHISPER_FALLBACK_MODEL_SIZE
                     logger.info(f"Fallback Faster-Whisper model '{cls._loaded_model_size}' loaded successfully.")

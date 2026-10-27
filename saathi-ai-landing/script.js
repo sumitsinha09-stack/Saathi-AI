@@ -443,39 +443,66 @@ document.addEventListener('DOMContentLoaded', () => {
     recordHintText.textContent = 'Tap the microphone to begin • Maximum 2 minutes (120s)';
   }
 
+  let isRequestingMic = false;
+
   // -------------------------------------------------------------------------
   // Start Voice Recording (Requests Microphone ONLY upon user action)
   // -------------------------------------------------------------------------
   async function startRecording() {
+    if (isRequestingMic) return;
     hideAlert();
 
     // Check secure context requirement (HTTPS or localhost)
-    const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    const hostname = window.location.hostname || 'localhost';
+    const isLocalhost = ['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'].includes(hostname) || hostname.endsWith('.localhost');
     if (!window.isSecureContext && !isLocalhost) {
-      showAlert('Microphone access requires HTTPS or localhost. Please open this site via HTTPS or localhost.', 'error');
+      recordStatusLabel.textContent = '⚠️ Insecure Context';
+      recordHintText.textContent = 'Microphone access requires HTTPS or http://localhost:8000';
+      showAlert('Microphone access requires HTTPS or localhost. Please open this site via http://localhost:8000', 'error');
       return;
     }
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      recordStatusLabel.textContent = '🎙️ Browser Mic Not Supported';
+      recordHintText.textContent = 'Your browser does not support live audio recording. Use the Upload tab or sample audio below.';
       showAlert('Your browser does not support audio recording. Please use the Upload Audio tab instead.', 'error');
       return;
     }
 
+    // Immediate visual feedback so the user knows their click registered
+    isRequestingMic = true;
+    btnRecord.classList.add('requesting');
+    recordStatusLabel.textContent = 'Requesting microphone...';
+    recordHintText.textContent = 'Please click "Allow" on your browser microphone popup...';
+
     const mimeType = getSupportedMimeType();
 
     try {
-      // Prompt user for microphone permission
-      audioStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
+      // Prompt user for microphone permission with fallback to simple audio
+      let stream = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+      } catch (constraintErr) {
+        console.warn('Advanced audio constraints not supported, retrying with basic audio...', constraintErr);
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
 
+      audioStream = stream;
       audioChunks = [];
       const options = mimeType ? { mimeType } : {};
-      mediaRecorder = new MediaRecorder(audioStream, options);
+      
+      try {
+        mediaRecorder = new MediaRecorder(audioStream, options);
+      } catch (mimeErr) {
+        console.warn('MediaRecorder with specified options failed, falling back to default:', mimeErr);
+        mediaRecorder = new MediaRecorder(audioStream);
+      }
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) {
@@ -504,7 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         recordStatusLabel.textContent = 'Recording complete — Transcribing audio...';
         recordHintText.textContent = 'Voice note automatically sent for speech-to-text';
-        btnRecord.classList.remove('recording', 'paused');
+        btnRecord.classList.remove('recording', 'paused', 'requesting');
         btnRecord.disabled = true;
 
         btnPauseRecord.disabled = true;
@@ -520,11 +547,12 @@ document.addEventListener('DOMContentLoaded', () => {
       startTimer();
       startVisualizer(audioStream);
 
-      // Update UI state
+      // Update UI state to active recording
+      btnRecord.classList.remove('requesting');
       btnRecord.classList.add('recording');
       btnRecord.classList.remove('paused');
-      recordStatusLabel.textContent = 'Recording in progress...';
-      recordHintText.textContent = 'Speak clearly into your microphone';
+      recordStatusLabel.textContent = '🔴 Recording in progress...';
+      recordHintText.textContent = 'Speak clearly into your microphone • Tap button to stop';
 
       btnPauseRecord.disabled = false;
       btnStopRecord.disabled = false;
@@ -534,14 +562,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } catch (err) {
       console.error('Microphone error:', err);
+      btnRecord.classList.remove('recording', 'paused', 'requesting');
+
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        showAlert('Microphone permission denied. Please allow microphone access in your browser site permissions.', 'error');
+        recordStatusLabel.textContent = '🔒 Microphone Permission Blocked';
+        recordHintText.innerHTML = 'Browser blocked microphone access. Click the <strong>lock icon (🔒)</strong> in your address bar to set <em>Microphone: Allow</em>, then tap here again. Or test with sample audio below.';
+        showAlert('Microphone permission denied. Please allow microphone access in your browser settings (click the lock icon in the address bar) or use the sample audio below.', 'error');
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        showAlert('No microphone was detected on your device. Please connect a microphone or use the upload tab.', 'error');
+        recordStatusLabel.textContent = '🎙️ No Microphone Detected';
+        recordHintText.textContent = 'No microphone device was detected on your system. Please connect a microphone or use the sample audio below.';
+        showAlert('No microphone was detected on your device. Please connect a microphone or test with sample audio below.', 'error');
       } else {
+        recordStatusLabel.textContent = '⚠️ Microphone Error';
+        recordHintText.textContent = `Unable to start recording (${err.message || err.name}). Please try again or test sample audio.`;
         showAlert(`Microphone error: ${err.message || 'Unable to access microphone'}.`, 'error');
       }
-      resetRecordingUI();
+
+      if (audioStream) {
+        audioStream.getTracks().forEach(track => track.stop());
+        audioStream = null;
+      }
+    } finally {
+      isRequestingMic = false;
+      btnRecord.classList.remove('requesting');
     }
   }
 
@@ -603,9 +646,10 @@ document.addEventListener('DOMContentLoaded', () => {
     recordedBlob = null;
     audioChunks = [];
     isPaused = false;
+    isRequestingMic = false;
 
     btnRecord.disabled = false;
-    btnRecord.classList.remove('recording', 'paused');
+    btnRecord.classList.remove('recording', 'paused', 'requesting');
     recordStatusLabel.textContent = 'Ready to record';
     recordHintText.textContent = 'Tap the microphone to begin • Maximum 2 minutes (120s)';
 
@@ -623,6 +667,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Event Listeners for Recorder Buttons
   btnRecord.addEventListener('click', () => {
+    if (isRequestingMic) return;
     if (!mediaRecorder || mediaRecorder.state === 'inactive') {
       startRecording();
     } else {
@@ -634,6 +679,66 @@ document.addEventListener('DOMContentLoaded', () => {
   btnStopRecord.addEventListener('click', stopRecording);
   btnDeleteRecord.addEventListener('click', discardRecording);
   btnReRecord.addEventListener('click', discardRecording);
+
+  // -------------------------------------------------------------------------
+  // Sample Audio Shortcuts (Instant 1-Click Simulation)
+  // -------------------------------------------------------------------------
+  async function loadAndSendSampleAudio(filename, label) {
+    hideAlert();
+    recordStatusLabel.textContent = `Loading ${label}...`;
+    recordHintText.textContent = 'Fetching sample audio and processing transcription pipeline...';
+    btnRecord.classList.add('requesting');
+
+    try {
+      const response = await fetch(`/samples/${filename}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} fetching sample`);
+      }
+      const blob = await response.blob();
+      recordStatusLabel.textContent = `Processing ${label}`;
+      recordHintText.textContent = 'Transcribing and analyzing fraud incident...';
+      sendAudioData(blob, filename, 25.0);
+    } catch (err) {
+      console.error('Failed to load sample audio:', err);
+      showAlert(`Could not load sample audio: ${err.message}`, 'error');
+      recordStatusLabel.textContent = 'Ready to record';
+      recordHintText.textContent = 'Tap the microphone to begin • Maximum 2 minutes (120s)';
+    } finally {
+      btnRecord.classList.remove('requesting');
+    }
+  }
+
+  const btnSampleHindi = document.getElementById('btn-sample-hindi');
+  const btnSampleEnglish = document.getElementById('btn-sample-english');
+
+  if (btnSampleHindi) {
+    btnSampleHindi.addEventListener('click', () => {
+      loadAndSendSampleAudio('sample1_bank_otp_hindi.wav', 'Hindi Bank OTP Scam');
+    });
+  }
+
+  if (btnSampleEnglish) {
+    btnSampleEnglish.addEventListener('click', () => {
+      loadAndSendSampleAudio('sample5_customer_support_pin_english.wav', 'English Tech Support Scam');
+    });
+  }
+
+  // Hero CTA button & Nav links smooth scroll + pulse highlight
+  const ctaRecordHeroBtn = document.getElementById('cta-record-hero-btn');
+  if (ctaRecordHeroBtn) {
+    ctaRecordHeroBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const studioSec = document.getElementById('voice-studio');
+      if (studioSec) {
+        studioSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(() => {
+          btnRecord.classList.add('highlight-pulse');
+          setTimeout(() => btnRecord.classList.remove('highlight-pulse'), 2500);
+          btnRecord.focus();
+        }, 600);
+      }
+    });
+  }
 
   // -------------------------------------------------------------------------
   // File Upload Handling
@@ -921,8 +1026,14 @@ document.addEventListener('DOMContentLoaded', () => {
           } else if (currentStatus === 'transcribing') {
             setStepperState('transcribing');
             pipelineStatusBadge.textContent = 'Transcribing';
-            pipelineMessage.innerHTML = '⚡ <strong>Transcribing audio locally...</strong> Faster-Whisper running on backend. Preserving original spoken dialect.';
+            const estPercent = Math.min(92, 35 + Math.round(pollingAttempts * 6));
+            progressBarFill.style.width = `${estPercent}%`;
+            const elapsed = (pollingAttempts * 1.5).toFixed(0);
+            progressText.textContent = `Transcribing speech locally... (${elapsed}s elapsed)`;
+            pipelineMessage.innerHTML = '⚡ <strong>Transcribing audio locally with Faster-Whisper...</strong> Speech-to-text running locally on device.';
           } else if (currentStatus === 'completed') {
+            progressBarFill.style.width = '100%';
+            progressText.textContent = 'Processing complete (100%)';
             currentJobToken = token;
             currentTranscript = data.transcript;
             currentDetectedLanguage = data.language;
@@ -1172,8 +1283,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btnReextractComplaint.innerHTML = '<span>🔄 Re-extract</span>';
       }
     });
-  }
-    }, 1500); // Poll every 1.5s
   }
 
   // -------------------------------------------------------------------------
