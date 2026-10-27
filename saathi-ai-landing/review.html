@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="/styles.css">
-  <link rel="stylesheet" href="/review.css">
+  <link rel="stylesheet" href="/review.css?v=3">
 </head>
 <body class="review-body">
   <!-- Minimal Top Navigation Bar -->
@@ -504,6 +504,7 @@
       <div class="modal-header">
         <span class="modal-icon">⚠️</span>
         <h3 class="modal-title">Confirm Complaint Cancellation</h3>
+        <button type="button" class="modal-btn-close" id="btn-close-cancel-top" aria-label="Close modal">&times;</button>
       </div>
       <div class="modal-body">
         <p>Are you sure you want to cancel this complaint?</p>
@@ -528,6 +529,7 @@
       <div class="modal-header">
         <span class="modal-icon">🏦</span>
         <h3 class="modal-title">Notify My Bank — Urgent Fraud Report</h3>
+        <button type="button" class="modal-btn-close" id="btn-close-bank-top" aria-label="Close modal">&times;</button>
       </div>
       <div class="modal-body">
         <p class="modal-instruction">
@@ -571,6 +573,7 @@
       <div class="modal-header">
         <span class="modal-icon">📞</span>
         <h3 class="modal-title">Call National Cybercrime Helpline 1930</h3>
+        <button type="button" class="modal-btn-close" id="btn-close-call-top" aria-label="Close modal">&times;</button>
       </div>
       <div class="modal-body">
         <p>
@@ -606,6 +609,7 @@
       <div class="modal-header">
         <span class="modal-icon">🌐</span>
         <h3 class="modal-title">How to File Your Complaint on the Official Cybercrime Portal</h3>
+        <button type="button" class="modal-btn-close" id="btn-close-portal-top" aria-label="Close modal">&times;</button>
       </div>
       <div class="modal-body">
         <div class="official-portal-banner">
@@ -657,6 +661,7 @@
       <div class="modal-header">
         <span class="modal-icon">🚔</span>
         <h3 class="modal-title">Simulated FIR (Demo Mode)</h3>
+        <button type="button" class="modal-btn-close" id="btn-close-fir-top" aria-label="Close modal">&times;</button>
       </div>
       <div class="modal-body">
         <!-- Persistent prominent DEMO banner -->
@@ -727,6 +732,7 @@
       <div class="modal-header">
         <span class="modal-icon">🤖</span>
         <h3 class="modal-title">Assisted Cybercrime Portal Filing</h3>
+        <button type="button" class="modal-btn-close" id="btn-close-autofile-top" aria-label="Close modal">&times;</button>
       </div>
       <div class="modal-body">
         
@@ -834,6 +840,6 @@
     </div>
   </div>
 
-  <script src="/review.js"></script>
+  <script src="/review.js?v=3"></script>
 </body>
 </html>

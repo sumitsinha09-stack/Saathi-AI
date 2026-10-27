@@ -1115,6 +1115,48 @@ Protected under cybersecurity zero-credential standards (No PINs/OTPs).`;
     });
   }
 
+  // Universal top close button handler for all modals
+  document.querySelectorAll('.modal-btn-close').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const parentModal = e.target.closest('.modal-backdrop');
+      if (parentModal) {
+        parentModal.style.display = 'none';
+        if (parentModal.id === 'modal-auto-file' && filingPollingInterval) {
+          clearInterval(filingPollingInterval);
+          filingPollingInterval = null;
+        }
+      }
+    });
+  });
+
+  // Dismiss modal when clicking outer backdrop
+  document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) {
+        backdrop.style.display = 'none';
+        if (backdrop.id === 'modal-auto-file' && filingPollingInterval) {
+          clearInterval(filingPollingInterval);
+          filingPollingInterval = null;
+        }
+      }
+    });
+  });
+
+  // Close active modal on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+        if (backdrop.style.display !== 'none') {
+          backdrop.style.display = 'none';
+          if (backdrop.id === 'modal-auto-file' && filingPollingInterval) {
+            clearInterval(filingPollingInterval);
+            filingPollingInterval = null;
+          }
+        }
+      });
+    }
+  });
+
   if (btnSubmitAutofileAuth) {
     btnSubmitAutofileAuth.addEventListener('click', async () => {
       const captcha = (autofileCaptchaInput ? autofileCaptchaInput.value : '').trim();

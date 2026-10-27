@@ -114,12 +114,20 @@ async def review_page(token: str) -> FileResponse:
 
 @app.api_route("/review.js", methods=["GET", "HEAD"], include_in_schema=False)
 async def review_js() -> FileResponse:
-    return FileResponse(os.path.join(LANDING_DIR, "review.js"), media_type="application/javascript")
+    return FileResponse(
+        os.path.join(LANDING_DIR, "review.js"),
+        media_type="application/javascript",
+        headers={"Cache-Control": "no-cache, must-revalidate"}
+    )
 
 
 @app.api_route("/review.css", methods=["GET", "HEAD"], include_in_schema=False)
 async def review_css() -> FileResponse:
-    return FileResponse(os.path.join(LANDING_DIR, "review.css"), media_type="text/css")
+    return FileResponse(
+        os.path.join(LANDING_DIR, "review.css"),
+        media_type="text/css",
+        headers={"Cache-Control": "no-cache, must-revalidate"}
+    )
 
 
 @app.get("/helpline", include_in_schema=False)
