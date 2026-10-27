@@ -663,3 +663,171 @@ async def download_complaint_pdf(
             "Cache-Control": "no-store, no-cache, must-revalidate",
         },
     )
+
+
+# -------------------------------------------------------------------------
+# Assisted Portal Auto-Filing Endpoints (Option A: Citizen-in-the-Loop RPA)
+# -------------------------------------------------------------------------
+from backend.app.services.portal_auto_filer import PortalAutoFiler
+
+
+class AutoFileStartPayload(BaseModel):
+    citizen_name: Optional[str] = Field(None, max_length=120)
+    citizen_email: Optional[str] = Field(None, max_length=120)
+    citizen_state: Optional[str] = Field(None, max_length=64)
+
+
+class AutoFileAuthPayload(BaseModel):
+    session_id: str = Field(..., min_length=1)
+    captcha: str = Field(..., min_length=1, max_length=10)
+    otp: str = Field(..., min_length=6, max_length=6)
+
+
+@router.post(
+    "/{token}/auto-file/start",
+    status_code=status.HTTP_200_OK,
+    summary="Start assisted robotic portal filing session",
+    description="Launches automated form pre-filling on cybercrime.gov.in and pauses at the citizen CAPTCHA / OTP security checkpoint.",
+    dependencies=[Depends(rate_limit("complaint_action", "RATE_LIMIT_ACTIONS"))],
+)
+async def start_portal_auto_file(
+    token: str,
+    payload: Optional[AutoFileStartPayload] = None,
+    authorization: Optional[str] = Header(None),
+    query_token: Optional[str] = Query(None, alias="token"),
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    clean_token = token.strip()
+    if clean_token.upper().startswith("SAI-"):
+        auth_token = extract_token_from_header_or_query(authorization=authorization, query_token=query_token)
+        if not auth_token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Missing access token. Please provide Authorization: Bearer <token> or ?token=<token>.",
+            )
+        complaint = await ComplaintService.get_complaint(
+            reference_number=clean_token.upper(),
+            access_token=auth_token,
+            db=db,
+            require_token=True,
+        )
+        if not complaint:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Complaint not found or token is invalid.",
+            )
+        clean_token = auth_token
+
+    detail = await ComplaintService.get_complaint_detail_by_token(token=clean_token, db=db)
+    if not detail:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Complaint not found or token is invalid.",
+        )
+
+    current_status = (detail.get("status") or "").lower()
+    if current_status == "cancelled":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cancelled complaints cannot be filed on the portal.",
+        )
+    if current_status != "confirmed":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Filing is locked until complaint is confirmed. Current status: '{detail.get('status')}'.",
+        )
+
+    citizen_name = payload.citizen_name if payload else None
+    citizen_email = payload.citizen_email if payload else None
+    citizen_state = payload.citizen_state if payload else None
+
+    session = await PortalAutoFiler.start_filing(
+        complaint=detail,
+        citizen_name=citizen_name,
+        citizen_email=citizen_email,
+        citizen_state=citizen_state,
+    )
+
+    # Record action in audit history
+    try:
+        await ComplaintService.record_action_by_token(
+            token=clean_token,
+            action="portal_auto_file",
+            metadata={"session_id": session.session_id},
+            db=db,
+        )
+    except Exception as e:
+        logger.debug(f"Action record notice: {e}")
+
+    return session.to_dict()
+
+
+@router.get(
+    "/{token}/auto-file/status",
+    status_code=status.HTTP_200_OK,
+    summary="Poll status of assisted portal filing session",
+    description="Returns live progress, pre-filled fields, live CAPTCHA image, and official acknowledgement number.",
+    dependencies=[Depends(rate_limit("complaint_read", "RATE_LIMIT_COMPLAINT_READ"))],
+)
+async def get_portal_auto_file_status(
+    token: str,
+    session_id: Optional[str] = Query(None),
+    authorization: Optional[str] = Header(None),
+    query_token: Optional[str] = Query(None, alias="token"),
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    clean_token = token.strip()
+    session = None
+    if session_id:
+        session = PortalAutoFiler.get_session(session_id)
+
+    if not session:
+        ref = clean_token.upper() if clean_token.upper().startswith("SAI-") else None
+        if not ref:
+            detail = await ComplaintService.get_complaint_detail_by_token(token=clean_token, db=db)
+            if detail:
+                ref = detail.get("reference_number")
+        if ref:
+            session = PortalAutoFiler.get_session_by_ref(ref)
+
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No active filing session found for this complaint.",
+        )
+
+    return session.to_dict()
+
+
+@router.post(
+    "/{token}/auto-file/submit-auth",
+    status_code=status.HTTP_200_OK,
+    summary="Submit citizen CAPTCHA and SMS OTP to finalize filing",
+    description="Accepts citizen CAPTCHA solve and SMS OTP to submit pre-filled complaint and generate official government Ack Number.",
+    dependencies=[Depends(rate_limit("complaint_action", "RATE_LIMIT_ACTIONS"))],
+)
+async def submit_portal_auth(
+    token: str,
+    payload: AutoFileAuthPayload,
+    authorization: Optional[str] = Header(None),
+    query_token: Optional[str] = Query(None, alias="token"),
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    try:
+        result = await PortalAutoFiler.submit_auth(
+            session_id=payload.session_id,
+            captcha=payload.captcha,
+            otp=payload.otp,
+        )
+        return result
+    except KeyError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Filing session not found or expired.",
+        )
+    except ValueError as ve:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(ve),
+        )
+

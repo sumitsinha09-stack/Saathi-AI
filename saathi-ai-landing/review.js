@@ -957,6 +957,234 @@ Protected under cybersecurity zero-credential standards (No PINs/OTPs).`;
   }
 
   // -------------------------------------------------------------------------
+  // Action: Assisted Portal Auto-Filing (Option A: Citizen-in-the-Loop RPA)
+  // -------------------------------------------------------------------------
+  const btnActionAutoFile = document.getElementById('btn-action-auto-file');
+  const modalAutoFile = document.getElementById('modal-auto-file');
+  const btnCloseAutoFileModal = document.getElementById('btn-close-autofile-modal');
+  const autofileStatusTitle = document.getElementById('autofile-status-title');
+  const autofileStatusPill = document.getElementById('autofile-status-pill');
+  const autofileProgressFill = document.getElementById('autofile-progress-fill');
+  const autofileStatusMessage = document.getElementById('autofile-status-message');
+  const autofileFieldsContainer = document.getElementById('autofile-fields-container');
+  const autofileFieldsTable = document.getElementById('autofile-fields-table');
+  const autofileAuthSection = document.getElementById('autofile-auth-section');
+  const autofileCaptchaImg = document.getElementById('autofile-captcha-img');
+  const autofileCaptchaInput = document.getElementById('autofile-captcha-input');
+  const autofileOtpInput = document.getElementById('autofile-otp-input');
+  const autofileOtpHint = document.getElementById('autofile-otp-hint');
+  const btnSubmitAutofileAuth = document.getElementById('btn-submit-autofile-auth');
+  const autofileAuthError = document.getElementById('autofile-auth-error');
+  const autofileSuccessCard = document.getElementById('autofile-success-card');
+  const autofileAckDisplay = document.getElementById('autofile-ack-display');
+  const btnCopyAckNumber = document.getElementById('btn-copy-ack-number');
+  const autofileLogsBox = document.getElementById('autofile-logs-box');
+
+  let activeFilingSessionId = null;
+  let filingPollingInterval = null;
+
+  function renderFilingLogs(logs) {
+    if (!autofileLogsBox || !logs) return;
+    autofileLogsBox.innerHTML = logs.map(l => `<div><span style="color: #64748b;">[${l.time}]</span> ${l.message}</div>`).join('');
+    autofileLogsBox.scrollTop = autofileLogsBox.scrollHeight;
+  }
+
+  function renderFilingFields(fields) {
+    if (!autofileFieldsTable || !fields) return;
+    autofileFieldsTable.innerHTML = Object.entries(fields).map(([k, v]) => `
+      <div><strong>${k}:</strong> <span style="color: #0f766e;">${v || '—'}</span></div>
+    `).join('');
+    autofileFieldsContainer.style.display = 'block';
+  }
+
+  function getActiveToken() {
+    if (COMPLAINT_TOKEN && !COMPLAINT_TOKEN.startsWith('SAI-')) {
+      return COMPLAINT_TOKEN;
+    }
+    const ref = currentComplaint ? currentComplaint.reference_number : COMPLAINT_TOKEN;
+    let stored = '';
+    try {
+      stored = localStorage.getItem(`saathi_token_${ref}`) || '';
+    } catch(e) {}
+    return stored || COMPLAINT_TOKEN;
+  }
+
+  async function pollFilingStatus() {
+    if (!activeFilingSessionId) return;
+    const targetToken = getActiveToken();
+    try {
+      const res = await fetch(`${API_BASE}/api/complaints/${encodeURIComponent(targetToken)}/auto-file/status?session_id=${encodeURIComponent(activeFilingSessionId)}&token=${encodeURIComponent(targetToken)}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      
+      // Update Title & Message
+      if (autofileStatusTitle) autofileStatusTitle.textContent = data.status_message || data.stage;
+      if (autofileStatusMessage) autofileStatusMessage.textContent = data.portal_mode === 'LIVE_GOV_PORTAL' ? 'Connected to live cybercrime.gov.in portal' : 'Assisted Gateway Mode active';
+      if (autofileStatusPill) autofileStatusPill.textContent = data.stage;
+      renderFilingLogs(data.logs);
+      if (data.fields_filled && Object.keys(data.fields_filled).length > 0) {
+        renderFilingFields(data.fields_filled);
+      }
+
+      // Stage handling
+      if (data.stage === 'CONNECTING_PORTAL') {
+        autofileProgressFill.style.width = '30%';
+      } else if (data.stage === 'FILLING_PORTAL_FORM') {
+        autofileProgressFill.style.width = '60%';
+      } else if (data.stage === 'AWAITING_CITIZEN_AUTH') {
+        autofileProgressFill.style.width = '80%';
+        autofileAuthSection.style.display = 'block';
+        if (data.captcha_image && autofileCaptchaImg) {
+          autofileCaptchaImg.src = data.captcha_image;
+        }
+        if (data.simulated_sms_otp_hint && autofileOtpHint) {
+          autofileOtpHint.textContent = data.simulated_sms_otp_hint;
+        }
+      } else if (data.stage === 'SUBMITTING') {
+        autofileProgressFill.style.width = '90%';
+        autofileAuthSection.style.display = 'none';
+      } else if (data.stage === 'COMPLETED') {
+        autofileProgressFill.style.width = '100%';
+        autofileProgressFill.style.background = '#22c55e';
+        autofileAuthSection.style.display = 'none';
+        autofileSuccessCard.style.display = 'block';
+        if (autofileAckDisplay && data.official_ack_number) {
+          autofileAckDisplay.textContent = data.official_ack_number;
+        }
+        clearInterval(filingPollingInterval);
+        filingPollingInterval = null;
+      } else if (data.stage === 'FAILED') {
+        autofileProgressFill.style.background = '#ef4444';
+        autofileStatusTitle.textContent = `Filing Error: ${data.error || 'Failed'}`;
+        clearInterval(filingPollingInterval);
+        filingPollingInterval = null;
+      }
+    } catch (e) {
+      console.warn('Auto-file polling error:', e);
+    }
+  }
+
+  if (btnActionAutoFile) {
+    btnActionAutoFile.addEventListener('click', async () => {
+      if (!modalAutoFile) return;
+      modalAutoFile.style.display = 'flex';
+      if (autofileAuthError) autofileAuthError.style.display = 'none';
+      if (autofileSuccessCard) autofileSuccessCard.style.display = 'none';
+      if (autofileAuthSection) autofileAuthSection.style.display = 'none';
+      if (autofileProgressFill) {
+        autofileProgressFill.style.width = '20%';
+        autofileProgressFill.style.background = 'var(--wa-primary, #128c7e)';
+      }
+      if (autofileStatusTitle) autofileStatusTitle.textContent = 'Connecting to cybercrime.gov.in...';
+      if (autofileStatusPill) autofileStatusPill.textContent = 'INITIALIZING';
+      if (autofileLogsBox) autofileLogsBox.innerHTML = '<div>[Initiating Playwright agent...]</div>';
+
+      const targetToken = getActiveToken();
+      try {
+        const res = await fetch(`${API_BASE}/api/complaints/${encodeURIComponent(targetToken)}/auto-file/start?token=${encodeURIComponent(targetToken)}`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${targetToken}`
+          },
+          body: JSON.stringify({})
+        });
+        if (res.ok) {
+          const session = await res.json();
+          activeFilingSessionId = session.session_id;
+          if (filingPollingInterval) clearInterval(filingPollingInterval);
+          filingPollingInterval = setInterval(pollFilingStatus, 1200);
+          pollFilingStatus();
+        } else {
+          const err = await res.json();
+          showAlert(err.detail || 'Failed to start assisted filing.', 'error');
+        }
+      } catch (err) {
+        showAlert('Network error starting assisted filing.', 'error');
+      }
+    });
+  }
+
+  if (btnCloseAutoFileModal && modalAutoFile) {
+    btnCloseAutoFileModal.addEventListener('click', () => {
+      modalAutoFile.style.display = 'none';
+      if (filingPollingInterval) {
+        clearInterval(filingPollingInterval);
+        filingPollingInterval = null;
+      }
+    });
+  }
+
+  if (btnSubmitAutofileAuth) {
+    btnSubmitAutofileAuth.addEventListener('click', async () => {
+      const captcha = (autofileCaptchaInput ? autofileCaptchaInput.value : '').trim();
+      const otp = (autofileOtpInput ? autofileOtpInput.value : '').trim();
+      if (autofileAuthError) autofileAuthError.style.display = 'none';
+
+      if (!captcha) {
+        if (autofileAuthError) {
+          autofileAuthError.textContent = 'Please enter the CAPTCHA code shown in the image.';
+          autofileAuthError.style.display = 'block';
+        }
+        return;
+      }
+      if (!otp || otp.length !== 6) {
+        if (autofileAuthError) {
+          autofileAuthError.textContent = 'Please enter the 6-digit SMS verification OTP.';
+          autofileAuthError.style.display = 'block';
+        }
+        return;
+      }
+
+      btnSubmitAutofileAuth.disabled = true;
+      btnSubmitAutofileAuth.innerHTML = '<span>⏳ Submitting to portal...</span>';
+
+      const targetToken = getActiveToken();
+      try {
+        const res = await fetch(`${API_BASE}/api/complaints/${encodeURIComponent(targetToken)}/auto-file/submit-auth?token=${encodeURIComponent(targetToken)}`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${targetToken}`
+          },
+          body: JSON.stringify({
+            session_id: activeFilingSessionId,
+            captcha: captcha,
+            otp: otp
+          })
+        });
+        if (res.ok) {
+          pollFilingStatus();
+        } else {
+          const err = await res.json();
+          if (autofileAuthError) {
+            autofileAuthError.textContent = err.detail || 'Verification rejected by portal.';
+            autofileAuthError.style.display = 'block';
+          }
+        }
+      } catch (err) {
+        if (autofileAuthError) {
+          autofileAuthError.textContent = 'Network error submitting credentials.';
+          autofileAuthError.style.display = 'block';
+        }
+      } finally {
+        btnSubmitAutofileAuth.disabled = false;
+        btnSubmitAutofileAuth.innerHTML = '<span>✅ Authorize & Lodge Official Complaint</span>';
+      }
+    });
+  }
+
+  if (btnCopyAckNumber && autofileAckDisplay) {
+    btnCopyAckNumber.addEventListener('click', () => {
+      const ack = autofileAckDisplay.textContent;
+      navigator.clipboard.writeText(ack).then(() => {
+        btnCopyAckNumber.textContent = '✓ Copied!';
+        setTimeout(() => { btnCopyAckNumber.textContent = '📋 Copy Ack Number'; }, 2000);
+      });
+    });
+  }
+
+  // -------------------------------------------------------------------------
   // 10. Bootstrap Initialization
   // -------------------------------------------------------------------------
   startPolling();

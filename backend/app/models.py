@@ -85,6 +85,8 @@ class Complaint(Base):
     confirmed_at = Column(DateTime(timezone=True), nullable=True)
     cancelled_at = Column(DateTime(timezone=True), nullable=True)
     expires_at = Column(DateTime(timezone=True), nullable=False)
+    official_ack_number = Column(String(64), nullable=True)
+    official_filed_at = Column(DateTime(timezone=True), nullable=True)
 
     history = relationship(
         "ComplaintStatusHistory",

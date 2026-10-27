@@ -953,6 +953,8 @@ class ComplaintService:
         "copy_filing_guide",
         "fir_simulation",
         "view_status",
+        "portal_auto_file",
+        "auto_file_portal",
     }
 
     @classmethod
