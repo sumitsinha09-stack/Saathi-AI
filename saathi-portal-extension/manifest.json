@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Saathi AI — Cybercrime Portal Auto-Filer",
+  "version": "1.0.0",
+  "description": "Auto-fills verified cyber fraud incident facts directly into the official National Cyber Crime Reporting Portal (cybercrime.gov.in).",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "*://*.cybercrime.gov.in/*",
+    "*://*.mha.gov.in/*",
+    "http://localhost:8000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Saathi AI Portal Helper"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.cybercrime.gov.in/*",
+        "*://*.mha.gov.in/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -104,12 +104,11 @@ async def script_js() -> FileResponse:
 
 @app.get("/c/{token}", include_in_schema=False)
 async def review_page(token: str) -> FileResponse:
-    """Serves the mobile-friendly Complaint Review, Editing, and Confirmation page."""
     review_file = os.path.join(LANDING_DIR, "review.html")
     if not os.path.exists(review_file):
         # Fallback to index if review.html not yet created
         return FileResponse(os.path.join(LANDING_DIR, "index.html"))
-    return FileResponse(review_file)
+    return FileResponse(review_file, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
 
 @app.api_route("/review.js", methods=["GET", "HEAD"], include_in_schema=False)
@@ -127,6 +126,18 @@ async def review_css() -> FileResponse:
         os.path.join(LANDING_DIR, "review.css"),
         media_type="text/css",
         headers={"Cache-Control": "no-cache, must-revalidate"}
+    )
+
+
+@app.api_route("/portal_autofill_engine.js", methods=["GET", "HEAD"], include_in_schema=False)
+async def portal_autofill_engine() -> FileResponse:
+    return FileResponse(
+        os.path.join(LANDING_DIR, "portal_autofill_engine.js"),
+        media_type="application/javascript",
+        headers={
+            "Cache-Control": "no-cache, must-revalidate",
+            "Access-Control-Allow-Origin": "*"
+        }
     )
 
 

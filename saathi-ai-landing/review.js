@@ -298,6 +298,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Missing Field Badges
     const missing = data.missing_fields || [];
     updateMissingBadges(missing);
+
+    // Prepare Option 1 1-Click Auto-Filler Payload
+    setupAutofillModal();
   }
 
   function populateFormFields(fields) {
@@ -957,161 +960,131 @@ Protected under cybersecurity zero-credential standards (No PINs/OTPs).`;
   }
 
   // -------------------------------------------------------------------------
-  // Action: Assisted Portal Auto-Filing (Option A: Citizen-in-the-Loop RPA)
+  // -------------------------------------------------------------------------
+  // 9. Action: 1-Click Cybercrime Portal Auto-Filler (Option 1 Bookmarklet & Extension)
   // -------------------------------------------------------------------------
   const btnActionAutoFile = document.getElementById('btn-action-auto-file');
   const modalAutoFile = document.getElementById('modal-auto-file');
   const btnCloseAutoFileModal = document.getElementById('btn-close-autofile-modal');
-  const autofileStatusTitle = document.getElementById('autofile-status-title');
-  const autofileStatusPill = document.getElementById('autofile-status-pill');
-  const autofileProgressFill = document.getElementById('autofile-progress-fill');
-  const autofileStatusMessage = document.getElementById('autofile-status-message');
-  const autofileFieldsContainer = document.getElementById('autofile-fields-container');
-  const autofileFieldsTable = document.getElementById('autofile-fields-table');
-  const autofileAuthSection = document.getElementById('autofile-auth-section');
-  const autofileCaptchaImg = document.getElementById('autofile-captcha-img');
-  const autofileCaptchaInput = document.getElementById('autofile-captcha-input');
-  const autofileOtpInput = document.getElementById('autofile-otp-input');
-  const autofileOtpHint = document.getElementById('autofile-otp-hint');
-  const btnSubmitAutofileAuth = document.getElementById('btn-submit-autofile-auth');
-  const autofileAuthError = document.getElementById('autofile-auth-error');
-  const autofileSuccessCard = document.getElementById('autofile-success-card');
-  const autofileAckDisplay = document.getElementById('autofile-ack-display');
-  const btnCopyAckNumber = document.getElementById('btn-copy-ack-number');
-  const autofileLogsBox = document.getElementById('autofile-logs-box');
+  const autofillBookmarkletLink = document.getElementById('autofill-bookmarklet-link');
+  const btnCopyAutofillScript = document.getElementById('btn-copy-autofill-script');
+  const autofillScriptCopiedMsg = document.getElementById('autofill-script-copied-msg');
+  const autofillReadyFields = document.getElementById('autofill-ready-fields');
 
-  let activeFilingSessionId = null;
-  let filingPollingInterval = null;
-
-  function renderFilingLogs(logs) {
-    if (!autofileLogsBox || !logs) return;
-    autofileLogsBox.innerHTML = logs.map(l => `<div><span style="color: #64748b;">[${l.time}]</span> ${l.message}</div>`).join('');
-    autofileLogsBox.scrollTop = autofileLogsBox.scrollHeight;
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
-  function renderFilingFields(fields) {
-    if (!autofileFieldsTable || !fields) return;
-    autofileFieldsTable.innerHTML = Object.entries(fields).map(([k, v]) => `
-      <div><strong>${k}:</strong> <span style="color: #0f766e;">${v || '—'}</span></div>
-    `).join('');
-    autofileFieldsContainer.style.display = 'block';
+  function getComplaintAutofillPayload() {
+    if (!currentComplaint) return {};
+    const f = currentComplaint.structured_fields || {};
+    return {
+      reference_number: currentComplaint.reference_number || 'SAI-XXXXXX',
+      incident_type: f.incident_type || '',
+      disputed_amount: f.financial_loss || f.disputed_amount || '',
+      reported_entity: f.reported_entity || '',
+      suspect_phone: f.phone_number || f.suspect_phone || '',
+      suspect_account_upi: f.suspect_account_upi || '',
+      suspect_channel: f.suspect_channel || '',
+      incident_date: f.incident_date || '',
+      victim_phone: currentComplaint.victim_phone || '',
+      summary: f.summary || currentComplaint.english_summary || '',
+      description: f.description || ''
+    };
   }
 
-  function getActiveToken() {
-    if (COMPLAINT_TOKEN && !COMPLAINT_TOKEN.startsWith('SAI-')) {
-      return COMPLAINT_TOKEN;
-    }
-    const ref = currentComplaint ? currentComplaint.reference_number : COMPLAINT_TOKEN;
-    let stored = '';
+  function setupAutofillModal() {
+    const data = getComplaintAutofillPayload();
+    
+    // Save to localStorage so Chrome extension or tab bridge can pick it up
     try {
-      stored = localStorage.getItem(`saathi_token_${ref}`) || '';
+      localStorage.setItem('saathi_active_complaint', JSON.stringify(data));
+      window.postMessage({ type: 'SAATHI_SYNC_COMPLAINT', payload: data }, '*');
     } catch(e) {}
-    return stored || COMPLAINT_TOKEN;
-  }
 
-  async function pollFilingStatus() {
-    if (!activeFilingSessionId) return;
-    const targetToken = getActiveToken();
-    try {
-      const res = await fetch(`${API_BASE}/api/complaints/${encodeURIComponent(targetToken)}/auto-file/status?session_id=${encodeURIComponent(activeFilingSessionId)}&token=${encodeURIComponent(targetToken)}`);
-      if (!res.ok) return;
-      const data = await res.json();
-      
-      // Update Title & Message
-      if (autofileStatusTitle) autofileStatusTitle.textContent = data.status_message || data.stage;
-      if (autofileStatusMessage) autofileStatusMessage.textContent = data.portal_mode === 'LIVE_GOV_PORTAL' ? 'Connected to live cybercrime.gov.in portal' : 'Assisted Gateway Mode active';
-      if (autofileStatusPill) autofileStatusPill.textContent = data.stage;
-      renderFilingLogs(data.logs);
-      if (data.fields_filled && Object.keys(data.fields_filled).length > 0) {
-        renderFilingFields(data.fields_filled);
-      }
+    // 1. Generate minified bookmarklet code
+    const jsonStr = JSON.stringify(data);
+    const bookmarkletCode = `javascript:(function(){window.__SAATHI_COMPLAINT__=${jsonStr};var s=document.createElement('script');s.src='http://localhost:8000/portal_autofill_engine.js?t='+Date.now();s.onerror=function(){alert('Saathi AI: Could not load autofill engine. Please make sure the Saathi AI server is running on http://localhost:8000.');};document.body.appendChild(s);})();`;
 
-      // Stage handling
-      if (data.stage === 'CONNECTING_PORTAL') {
-        autofileProgressFill.style.width = '30%';
-      } else if (data.stage === 'FILLING_PORTAL_FORM') {
-        autofileProgressFill.style.width = '60%';
-      } else if (data.stage === 'AWAITING_CITIZEN_AUTH') {
-        autofileProgressFill.style.width = '80%';
-        autofileAuthSection.style.display = 'block';
-        if (data.captcha_image && autofileCaptchaImg) {
-          autofileCaptchaImg.src = data.captcha_image;
-        }
-        if (data.simulated_sms_otp_hint && autofileOtpHint) {
-          autofileOtpHint.textContent = data.simulated_sms_otp_hint;
-        }
-      } else if (data.stage === 'SUBMITTING') {
-        autofileProgressFill.style.width = '90%';
-        autofileAuthSection.style.display = 'none';
-      } else if (data.stage === 'COMPLETED') {
-        autofileProgressFill.style.width = '100%';
-        autofileProgressFill.style.background = '#22c55e';
-        autofileAuthSection.style.display = 'none';
-        autofileSuccessCard.style.display = 'block';
-        if (autofileAckDisplay && data.official_ack_number) {
-          autofileAckDisplay.textContent = data.official_ack_number;
-        }
-        clearInterval(filingPollingInterval);
-        filingPollingInterval = null;
-      } else if (data.stage === 'FAILED') {
-        autofileProgressFill.style.background = '#ef4444';
-        autofileStatusTitle.textContent = `Filing Error: ${data.error || 'Failed'}`;
-        clearInterval(filingPollingInterval);
-        filingPollingInterval = null;
-      }
-    } catch (e) {
-      console.warn('Auto-file polling error:', e);
+    if (autofillBookmarkletLink) {
+      autofillBookmarkletLink.href = bookmarkletCode;
+      autofillBookmarkletLink.title = "Drag this link to your Bookmarks Bar (or click to copy code)";
+    }
+
+    // 2. Wire up script copy button
+    if (btnCopyAutofillScript) {
+      btnCopyAutofillScript.onclick = () => {
+        navigator.clipboard.writeText(bookmarkletCode).then(() => {
+          if (autofillScriptCopiedMsg) {
+            autofillScriptCopiedMsg.style.display = 'block';
+            setTimeout(() => { autofillScriptCopiedMsg.style.display = 'none'; }, 4000);
+          }
+        });
+      };
+    }
+
+    // 3. Populate ready-to-paste fields drawer
+    if (autofillReadyFields) {
+      const items = [
+        { label: 'Incident Reference', val: data.reference_number },
+        { label: 'Category / Incident Type', val: data.incident_type || 'Cyber Financial Fraud' },
+        { label: 'Disputed Amount', val: data.disputed_amount ? `₹${data.disputed_amount}` : '' },
+        { label: 'Reported Entity / Bank', val: data.reported_entity },
+        { label: 'Suspect Phone / Contact', val: data.suspect_phone },
+        { label: 'Suspect Account / UPI', val: data.suspect_account_upi },
+        { label: 'Incident Narrative', val: data.description || data.summary }
+      ];
+
+      autofillReadyFields.innerHTML = items.map((item, idx) => `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; padding: 7px 0; border-bottom: ${idx === items.length - 1 ? 'none' : '1px solid #f1f5f9'}; gap: 8px;">
+          <div style="flex: 1; word-break: break-word;">
+            <strong style="color: #475569; font-size: 0.78rem;">${item.label}:</strong>
+            <div style="color: #0f172a; margin-top: 2px;">${item.val ? escapeHtml(item.val) : '<em style="color:#94a3b8;">Not specified</em>'}</div>
+          </div>
+          ${item.val ? `
+            <button type="button" class="btn-copy-field" data-val="${encodeURIComponent(item.val)}" style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; cursor: pointer; color: #334155; white-space: nowrap; font-weight: 600;">
+              📋 Copy
+            </button>
+          ` : ''}
+        </div>
+      `).join('');
+
+      autofillReadyFields.querySelectorAll('.btn-copy-field').forEach(b => {
+        b.addEventListener('click', () => {
+          const textToCopy = decodeURIComponent(b.getAttribute('data-val'));
+          navigator.clipboard.writeText(textToCopy).then(() => {
+            const originalText = b.textContent;
+            b.textContent = '✓ Copied';
+            b.style.background = '#dcfce7';
+            b.style.color = '#15803d';
+            setTimeout(() => {
+              b.textContent = originalText;
+              b.style.background = '#f1f5f9';
+              b.style.color = '#334155';
+            }, 1800);
+          });
+        });
+      });
     }
   }
 
   if (btnActionAutoFile) {
-    btnActionAutoFile.addEventListener('click', async () => {
+    btnActionAutoFile.addEventListener('click', () => {
       if (!modalAutoFile) return;
       modalAutoFile.style.display = 'flex';
-      if (autofileAuthError) autofileAuthError.style.display = 'none';
-      if (autofileSuccessCard) autofileSuccessCard.style.display = 'none';
-      if (autofileAuthSection) autofileAuthSection.style.display = 'none';
-      if (autofileProgressFill) {
-        autofileProgressFill.style.width = '20%';
-        autofileProgressFill.style.background = 'var(--wa-primary, #128c7e)';
-      }
-      if (autofileStatusTitle) autofileStatusTitle.textContent = 'Connecting to cybercrime.gov.in...';
-      if (autofileStatusPill) autofileStatusPill.textContent = 'INITIALIZING';
-      if (autofileLogsBox) autofileLogsBox.innerHTML = '<div>[Initiating Playwright agent...]</div>';
-
-      const targetToken = getActiveToken();
-      try {
-        const res = await fetch(`${API_BASE}/api/complaints/${encodeURIComponent(targetToken)}/auto-file/start?token=${encodeURIComponent(targetToken)}`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${targetToken}`
-          },
-          body: JSON.stringify({})
-        });
-        if (res.ok) {
-          const session = await res.json();
-          activeFilingSessionId = session.session_id;
-          if (filingPollingInterval) clearInterval(filingPollingInterval);
-          filingPollingInterval = setInterval(pollFilingStatus, 1200);
-          pollFilingStatus();
-        } else {
-          const err = await res.json();
-          showAlert(err.detail || 'Failed to start assisted filing.', 'error');
-        }
-      } catch (err) {
-        showAlert('Network error starting assisted filing.', 'error');
-      }
+      setupAutofillModal();
     });
   }
 
   if (btnCloseAutoFileModal && modalAutoFile) {
     btnCloseAutoFileModal.addEventListener('click', () => {
       modalAutoFile.style.display = 'none';
-      if (filingPollingInterval) {
-        clearInterval(filingPollingInterval);
-        filingPollingInterval = null;
-      }
     });
   }
 
@@ -1121,10 +1094,6 @@ Protected under cybersecurity zero-credential standards (No PINs/OTPs).`;
       const parentModal = e.target.closest('.modal-backdrop');
       if (parentModal) {
         parentModal.style.display = 'none';
-        if (parentModal.id === 'modal-auto-file' && filingPollingInterval) {
-          clearInterval(filingPollingInterval);
-          filingPollingInterval = null;
-        }
       }
     });
   });
@@ -1134,10 +1103,6 @@ Protected under cybersecurity zero-credential standards (No PINs/OTPs).`;
     backdrop.addEventListener('click', (e) => {
       if (e.target === backdrop) {
         backdrop.style.display = 'none';
-        if (backdrop.id === 'modal-auto-file' && filingPollingInterval) {
-          clearInterval(filingPollingInterval);
-          filingPollingInterval = null;
-        }
       }
     });
   });
@@ -1148,83 +1113,10 @@ Protected under cybersecurity zero-credential standards (No PINs/OTPs).`;
       document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
         if (backdrop.style.display !== 'none') {
           backdrop.style.display = 'none';
-          if (backdrop.id === 'modal-auto-file' && filingPollingInterval) {
-            clearInterval(filingPollingInterval);
-            filingPollingInterval = null;
-          }
         }
       });
     }
   });
-
-  if (btnSubmitAutofileAuth) {
-    btnSubmitAutofileAuth.addEventListener('click', async () => {
-      const captcha = (autofileCaptchaInput ? autofileCaptchaInput.value : '').trim();
-      const otp = (autofileOtpInput ? autofileOtpInput.value : '').trim();
-      if (autofileAuthError) autofileAuthError.style.display = 'none';
-
-      if (!captcha) {
-        if (autofileAuthError) {
-          autofileAuthError.textContent = 'Please enter the CAPTCHA code shown in the image.';
-          autofileAuthError.style.display = 'block';
-        }
-        return;
-      }
-      if (!otp || otp.length !== 6) {
-        if (autofileAuthError) {
-          autofileAuthError.textContent = 'Please enter the 6-digit SMS verification OTP.';
-          autofileAuthError.style.display = 'block';
-        }
-        return;
-      }
-
-      btnSubmitAutofileAuth.disabled = true;
-      btnSubmitAutofileAuth.innerHTML = '<span>⏳ Submitting to portal...</span>';
-
-      const targetToken = getActiveToken();
-      try {
-        const res = await fetch(`${API_BASE}/api/complaints/${encodeURIComponent(targetToken)}/auto-file/submit-auth?token=${encodeURIComponent(targetToken)}`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${targetToken}`
-          },
-          body: JSON.stringify({
-            session_id: activeFilingSessionId,
-            captcha: captcha,
-            otp: otp
-          })
-        });
-        if (res.ok) {
-          pollFilingStatus();
-        } else {
-          const err = await res.json();
-          if (autofileAuthError) {
-            autofileAuthError.textContent = err.detail || 'Verification rejected by portal.';
-            autofileAuthError.style.display = 'block';
-          }
-        }
-      } catch (err) {
-        if (autofileAuthError) {
-          autofileAuthError.textContent = 'Network error submitting credentials.';
-          autofileAuthError.style.display = 'block';
-        }
-      } finally {
-        btnSubmitAutofileAuth.disabled = false;
-        btnSubmitAutofileAuth.innerHTML = '<span>✅ Authorize & Lodge Official Complaint</span>';
-      }
-    });
-  }
-
-  if (btnCopyAckNumber && autofileAckDisplay) {
-    btnCopyAckNumber.addEventListener('click', () => {
-      const ack = autofileAckDisplay.textContent;
-      navigator.clipboard.writeText(ack).then(() => {
-        btnCopyAckNumber.textContent = '✓ Copied!';
-        setTimeout(() => { btnCopyAckNumber.textContent = '📋 Copy Ack Number'; }, 2000);
-      });
-    });
-  }
 
   // -------------------------------------------------------------------------
   // 10. Bootstrap Initialization
